@@ -6,19 +6,26 @@ local function truncateNumber(nu)
 	return string.format("%.2f", nu)
 end
 
-local function showActualCraftTime(gui, spritePath, recipeName, message)
-	if gui["ACT-frame"] then
-		gui["ACT-frame"].destroy()
+local function getRecipeFromOutput(entity)
+	for item,_ in pairs(entity.get_output_inventory().get_contents()) do --can get several *oil*?
+		return game.recipe_prototypes[item]
 	end
-	if spritePath then
-		gui.add{type = "frame", name = "ACT-frame"}.add{type = "sprite", name = recipeName..gui.player_index, sprite = spritePath}
-		gui["ACT-frame"].add{type = "label", name = recipeName.."_"..gui.player_index, caption = message}
+	return nil
+end
+
+local function getRecipeFromFurnace(entity)
+	if entity.type == "furnace" then
+		return entity.previous_recipe
 	else
-		gui.add{type = "frame", name = "ACT-frame"}.add{type = "label", name = recipeName..gui.player_index, caption = message}
+		return nil
 	end
 end
 
-function spriteCheck(player, spritePath)
+local function getRecipe(entity)
+	return entity.get_recipe() or getRecipeFromOutput(entity) or getRecipeFromFurnace(entity)
+end
+
+local function spriteCheck(player, spritePath)
 	if player.gui.is_valid_sprite_path(spritePath) then
 		return spritePath
 	else
@@ -32,70 +39,77 @@ local function setupGui(event)
 		if	entity and (
 				entity.type == "assembling-machine" or
 				entity.type == "furnace" or
-				entity.type == "rocket-silo")	then
-			local craftSpeed = entity.prototype.crafting_speed
-			local recipe = entity.get_recipe()
-			if not recipe and entity.type == "furnace" then
-				if not entity.get_output_inventory().is_empty() then 
-					for item,_ in pairs(entity.get_output_inventory().get_contents()) do
-						recipe = game.recipe_prototypes[item]
-					end
-				end
-				if not recipe  then
-					recipe = entity.previous_recipe
-				end
-			end
-			
-			
-			local effects = 0
-			if entity.effects and entity.effects.speed then
-				effects = entity.effects.speed.bonus
-			end
-			local percent = craftSpeed*effects
-			local player = game.players[event.player_index]
+				entity.type == "rocket-silo")  then
+				
+			local recipe = getRecipe(entity)
+			local playerIndex = event.player_index
+			local player = game.players[playerIndex]
+			local spritePath = spriteCheck(player, "entity/"..entity.name)
+			local lName = localizeString(entity.name)
+			local message = "No recipe information"
 			local guiLocation = player.mod_settings["ACT-Gui-Location"].value
 			local playersGui = player.gui[guiLocation] --top or left
-			local spritePath
+			local seconds
+
+			playersGui.add{type = "frame", name = "ACT-frame_"..playerIndex}
+
 			if recipe then
+				local craftSpeed = entity.prototype.crafting_speed
+				local effects = 0
+				if entity.effects and entity.effects.speed then
+					effects = entity.effects.speed.bonus
+				end
+				local percent = craftSpeed*effects
+
 				local simple = player.mod_settings["ACT-simple-text"].value --t or f
-				local message = ""
 				local base = recipe.energy
-				local seconds = truncateNumber(base/(craftSpeed+percent))
-				local ips = truncateNumber(1/seconds)
-				
-				local lName = localizeString(recipe.name)				
+				seconds = truncateNumber(base/(craftSpeed+percent))				
+				lName = localizeString(recipe.name)
+				spritePath = spriteCheck(player, "recipe/"..recipe.name)
 				if simple then
-					spritePath = spriteCheck(player, "recipe/"..recipe.name)
+					message = ""
 				else
 					message = lName.." crafts in: "
 				end
-				message = message..seconds.."s.   Items/s: "..ips
-				showActualCraftTime(playersGui, spritePath, lName, message)
-			else
-				spritePath = spriteCheck(player, "entity/"..entity.name)
-				local lName = ""
-				local message = "No recipe information"
-				showActualCraftTime(playersGui, spritePath, lName, message)
+				message = message..seconds.." seconds."
+			end
+
+			playersGui["ACT-frame_"..playerIndex].add{type = "sprite-button", name = lName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+			playersGui["ACT-frame_"..playerIndex].add{type = "label", name = lName.."_"..playerIndex.."_label", caption = message}
+
+			if recipe then
+				for i = 1, #recipe.products do
+					local product = recipe.products[i]
+					playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = product.name}
+					playersGui["ACT-frame_"..playerIndex][product.name].add{type = "sprite", name = "product"..i, sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)}
+					playersGui["ACT-frame_"..playerIndex][product.name].add{type = "label", name = "IPS"..i, caption = truncateNumber((product.amount or product.amount_max) / seconds).."/s", tooltip = "Items per second"}
+				end
 			end
 		end
 	end
 end
 
 local function closeGui(event)
-local player = game.players[event.player_index]
-local guiLocation = player.mod_settings["ACT-Gui-Location"].value
-	if player.gui[guiLocation]["ACT-frame"] then
-		player.gui[guiLocation]["ACT-frame"].destroy()
+	local player = game.players[event.player_index]
+	local guiLocation = player.mod_settings["ACT-Gui-Location"].value
+	if player.gui[guiLocation]["ACT-frame_"..event.player_index] then
+		player.gui[guiLocation]["ACT-frame_"..event.player_index].destroy()
 	end
 end
 
--- local function modifyRecipe(event)
-	-- game.print("on_gui_click confirmed")
--- end
+local function playerClickedGui(event)
+	local player = game.players[event.player_index]
+	if event.element.type == "sprite-button"  then 
+
+		event.entity = player.opened
+		event.gui_type = defines.gui_type.entity
+		event.element.parent.destroy()
+		setupGui(event)
+	end
+end
 
 script.on_event(defines.events.on_gui_opened, setupGui)
 
 script.on_event(defines.events.on_gui_closed, closeGui)
 
---script.on_event(defines.events.on_gui_click, modifyRecipe)
-
+script.on_event(defines.events.on_gui_click, playerClickedGui)
