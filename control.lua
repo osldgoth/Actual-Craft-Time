@@ -85,6 +85,9 @@ local function setupGui(event)
 					playersGui["ACT-frame_"..playerIndex].add{type = "label", name = lRName.."_"..playerIndex.."_label", caption = message}
 				end
 				
+				-- playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = "ingredients", caption = "Ingredient Items Per Second"}
+				-- playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = "products", caption = "Product Items Per Second"}
+								
 				for i = 1, #recipe.products do
 					local product = recipe.products[i]
 					playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = product.name}
