@@ -79,14 +79,20 @@ local function setupGui(event)
 
 			if recipe then
 				for i = 1, #recipe.products do
-					local product = recipe.products[i]
-					playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = product.name}
-					playersGui["ACT-frame_"..playerIndex][product.name].add{type = "sprite", name = "product"..i, sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)}
-					playersGui["ACT-frame_"..playerIndex][product.name].add{type = "label", name = "IPS"..i, caption = truncateNumber((product.amount or product.amount_max) / seconds).."/s", tooltip = "Items per second"}
+					addItemFrame(player, playersGui, playerIndex, i, recipe.products[i], seconds)
+				end
+				for i = 1, #recipe.ingredients do
+					addItemFrame(player, playersGui, playerIndex, i, recipe.ingredients[i], seconds)
 				end
 			end
 		end
 	end
+end
+
+function addItemFrame(player, playersGui, playerIndex, itemIndex, product, seconds)
+	playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = product.name}
+	playersGui["ACT-frame_"..playerIndex][product.name].add{type = "sprite", name = "product"..itemIndex, sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)}
+	playersGui["ACT-frame_"..playerIndex][product.name].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber((product.amount or product.amount_max) / seconds).."/s", tooltip = "Items per second"}
 end
 
 local function closeGui(event)
