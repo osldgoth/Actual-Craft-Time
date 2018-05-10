@@ -52,7 +52,9 @@ local function setupGui(event)
 			local seconds
 
 			playersGui.add{type = "frame", name = "ACT-frame_"..playerIndex}
-
+			playersGui["ACT-frame_"..playerIndex].add{type = "sprite-button", name = lName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+			playersGui["ACT-frame_"..playerIndex].add{type = "label", name = lName.."_"..playerIndex.."_label", caption = message}
+			
 			if recipe then
 				local craftSpeed = entity.prototype.crafting_speed
 				local effects = 0
@@ -64,20 +66,25 @@ local function setupGui(event)
 				local simple = player.mod_settings["ACT-simple-text"].value --t or f
 				local base = recipe.energy
 				seconds = truncateNumber(base/(craftSpeed+percent))				
-				lName = localizeString(recipe.name)
+				local lRName = localizeString(recipe.name)
 				spritePath = spriteCheck(player, "recipe/"..recipe.name)
+				
 				if simple then
 					message = ""
 				else
-					message = lName.." crafts in: "
+					message = lRName.." crafts in: "
 				end
 				message = message..seconds.." seconds."
-			end
-
-			playersGui["ACT-frame_"..playerIndex].add{type = "sprite-button", name = lName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
-			playersGui["ACT-frame_"..playerIndex].add{type = "label", name = lName.."_"..playerIndex.."_label", caption = message}
-
-			if recipe then
+				if playersGui["ACT-frame_"..playerIndex][lName.."_"..playerIndex.."_sprite"] then
+					playersGui["ACT-frame_"..playerIndex][lName.."_"..playerIndex.."_sprite"].destroy()
+					playersGui["ACT-frame_"..playerIndex].add{type = "sprite-button", name = lRName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lRName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+				end
+				
+				if playersGui["ACT-frame_"..playerIndex][lName.."_"..playerIndex.."_label"] then
+					playersGui["ACT-frame_"..playerIndex][lName.."_"..playerIndex.."_label"].destroy()
+					playersGui["ACT-frame_"..playerIndex].add{type = "label", name = lRName.."_"..playerIndex.."_label", caption = message}
+				end
+				
 				for i = 1, #recipe.products do
 					local product = recipe.products[i]
 					playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = product.name}
