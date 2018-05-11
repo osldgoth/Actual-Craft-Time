@@ -50,18 +50,37 @@ local function setupGui(event)
 			local guiLocation = player.mod_settings["ACT-Gui-Location"].value
 			local playersGui = player.gui[guiLocation] --top or left
 			local seconds
-
+			
 			playersGui.add{type = "frame", name = "ACT-frame_"..playerIndex}
-			playersGui["ACT-frame_"..playerIndex].add{type = "sprite-button", name = lName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
-			playersGui["ACT-frame_"..playerIndex].add{type = "label", name = lName.."_"..playerIndex.."_label", caption = message}
+			local ACTFrame = playersGui["ACT-frame_"..playerIndex]
+			ACTFrame.add{type = "flow", name = "recipe", direction = "vertical"}
+			local recipeFlow = ACTFrame["recipe"]
+			recipeFlow.add{type = "label", name = "recipe_label", caption = "Recipe"}
+			
+			recipeFlow.add{type = "flow", name = "recipe info"}
+			local recipeInfoFlow = recipeFlow["recipe info"]
+			recipeInfoFlow.add{type = "sprite-button", name = lName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+			recipeInfoFlow.add{type = "label", name = lName.."_"..playerIndex.."_label", caption = message}
 			
 			if recipe then
 				local craftSpeed = entity.prototype.crafting_speed
-				local effects = 0
-				if entity.effects and entity.effects.speed then
-					effects = entity.effects.speed.bonus
+				local effects = {
+					consumption={bonus=0.0},
+					speed={bonus=0.0},
+					productivity={bonus=0.0},
+					pollution={bonus=0.0}
+				}
+				if entity.effects then
+					if entity.effects.speed	then
+						effects.speed.bonus = entity.effects.speed.bonus
+					end
+					if entity.effects.productivity then
+						effects.productivity.bonus = entity.effects.productivity.bonus
+					end
 				end
-				local percent = craftSpeed*effects
+				
+				
+				local percent = craftSpeed*effects.speed.bonus
 
 				local simple = player.mod_settings["ACT-simple-text"].value --t or f
 				local base = recipe.energy
@@ -74,35 +93,43 @@ local function setupGui(event)
 				else
 					message = lRName.." crafts in: "
 				end
-				message = message..seconds.." seconds."
-				if playersGui["ACT-frame_"..playerIndex][lName.."_"..playerIndex.."_sprite"] then
-					playersGui["ACT-frame_"..playerIndex][lName.."_"..playerIndex.."_sprite"].destroy()
-					playersGui["ACT-frame_"..playerIndex].add{type = "sprite-button", name = lRName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lRName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+				message = message..seconds.." seconds"
+				if recipeInfoFlow[lName.."_"..playerIndex.."_sprite"] then
+					recipeInfoFlow[lName.."_"..playerIndex.."_sprite"].destroy()
+					recipeInfoFlow.add{type = "sprite-button", name = lRName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lRName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
 				end
 				
-				if playersGui["ACT-frame_"..playerIndex][lName.."_"..playerIndex.."_label"] then
-					playersGui["ACT-frame_"..playerIndex][lName.."_"..playerIndex.."_label"].destroy()
-					playersGui["ACT-frame_"..playerIndex].add{type = "label", name = lRName.."_"..playerIndex.."_label", caption = message}
+				if recipeInfoFlow[lName.."_"..playerIndex.."_label"] then
+					recipeInfoFlow[lName.."_"..playerIndex.."_label"].destroy()
+					recipeInfoFlow.add{type = "label", name = lRName.."_"..playerIndex.."_label", caption = message}
 				end
 				
-				-- playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = "ingredients", caption = "Ingredient Items Per Second"}
-				-- playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = "products", caption = "Product Items Per Second"}
-								
-				for i = 1, #recipe.products do
-					addItemFrame(player, playersGui, playerIndex, i, recipe.products[i], seconds)
-				end
+				ACTFrame.add{type = "flow", name = "ingredients", direction = "vertical"}
+				ACTFrame["ingredients"].add{type = "label", name = "ingredients_label", caption = "Ingredients"}
+
+				ACTFrame.add{type = "flow", name = "products", direction = "vertical"}
+				ACTFrame["products"].add{type = "label", name = "products_label", caption = "Products"}
+						
 				for i = 1, #recipe.ingredients do
-					addItemFrame(player, playersGui, playerIndex, i, recipe.ingredients[i], seconds)
+					addItemFrame(player, ACTFrame, playerIndex, i, recipe.ingredients[i], seconds, "ingredients", effects)
+				end
+				
+				for i = 1, #recipe.products do
+					addItemFrame(player, ACTFrame, playerIndex, i, recipe.products[i], seconds, "products", effects)
 				end
 			end
 		end
 	end
 end
 
-function addItemFrame(player, playersGui, playerIndex, itemIndex, product, seconds)
-	playersGui["ACT-frame_"..playerIndex].add{type = "frame", name = product.name}
-	playersGui["ACT-frame_"..playerIndex][product.name].add{type = "sprite", name = "product"..itemIndex, sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)}
-	playersGui["ACT-frame_"..playerIndex][product.name].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber((product.amount or product.amount_max) / seconds).."/s", tooltip = "Items per second"}
+function addItemFrame(player, ACTFrame, playerIndex, itemIndex, product, seconds, outerFrameName, effects)
+ACTFrame[outerFrameName].add{type = "flow", name = product.name}
+	ACTFrame[outerFrameName][product.name].add{type = "sprite", name = outerFrameName..itemIndex, sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)}
+	if outerFrameName == "ingredients" then
+		ACTFrame[outerFrameName][product.name].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber((product.amount or product.amount_max) / seconds).."/s", tooltip = "Items per second"}
+	else
+		ACTFrame[outerFrameName][product.name].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber(((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds).."/s", tooltip = "Items per second"}
+	end
 end
 
 local function closeGui(event)
@@ -119,7 +146,7 @@ local function playerClickedGui(event)
 
 		event.entity = player.opened
 		event.gui_type = defines.gui_type.entity
-		event.element.parent.destroy()
+		event.element.parent.parent.parent.destroy()
 		setupGui(event)
 	end
 end
