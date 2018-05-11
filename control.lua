@@ -59,7 +59,7 @@ local function setupGui(event)
 			
 			recipeFlow.add{type = "flow", name = "recipe info"}
 			local recipeInfoFlow = recipeFlow["recipe info"]
-			recipeInfoFlow.add{type = "sprite-button", name = lName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+			recipeInfoFlow.add{type = "sprite-button", name = playerIndex.."_sprite-button", sprite = spritePath, tooltip = lName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
 			recipeInfoFlow.add{type = "label", name = lName.."_"..playerIndex.."_label", caption = message}
 			
 			if recipe then
@@ -94,9 +94,9 @@ local function setupGui(event)
 					message = lRName.." crafts in: "
 				end
 				message = message..seconds.." seconds"
-				if recipeInfoFlow[lName.."_"..playerIndex.."_sprite"] then
-					recipeInfoFlow[lName.."_"..playerIndex.."_sprite"].destroy()
-					recipeInfoFlow.add{type = "sprite-button", name = lRName.."_"..playerIndex.."_sprite", sprite = spritePath, tooltip = lRName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+				if recipeInfoFlow[playerIndex.."_sprite-button"] then
+					recipeInfoFlow[playerIndex.."_sprite-button"].destroy()
+					recipeInfoFlow.add{type = "sprite-button", name = playerIndex.."_sprite-button", sprite = spritePath, tooltip = lRName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
 				end
 				
 				if recipeInfoFlow[lName.."_"..playerIndex.."_label"] then
@@ -123,7 +123,7 @@ local function setupGui(event)
 end
 
 function addItemFrame(player, ACTFrame, playerIndex, itemIndex, product, seconds, outerFrameName, effects)
-ACTFrame[outerFrameName].add{type = "flow", name = product.name}
+	ACTFrame[outerFrameName].add{type = "flow", name = product.name}
 	ACTFrame[outerFrameName][product.name].add{type = "sprite", name = outerFrameName..itemIndex, sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)}
 	if outerFrameName == "ingredients" then
 		ACTFrame[outerFrameName][product.name].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber((product.amount or product.amount_max) / seconds).."/s", tooltip = "Items per second"}
@@ -141,8 +141,9 @@ local function closeGui(event)
 end
 
 local function playerClickedGui(event)
+	local playerIndex = event.player_index
 	local player = game.players[event.player_index]
-	if event.element.type == "sprite-button"  then 
+	if event.element.type == "sprite-button" and event.element.name == playerIndex.."_sprite-button"  then 
 
 		event.entity = player.opened
 		event.gui_type = defines.gui_type.entity
