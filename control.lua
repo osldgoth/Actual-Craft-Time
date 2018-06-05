@@ -36,7 +36,12 @@ end
 local function setupGui(event)
 	if event.gui_type == defines.gui_type.entity then
 		local entity = event.entity
-		if	entity and (
+		--if entity then
+		--	game.print("log")
+		--	log(entity.name..serpent.block(entity, {comment=false}))
+		--end
+		if	entity and (--add in mining drills/reactor/
+		--/c game.print(serpent.block(game.player.selected.prototype.mineable_properties))
 				entity.type == "assembling-machine" or
 				entity.type == "furnace" or
 				entity.type == "rocket-silo")  then
@@ -51,6 +56,9 @@ local function setupGui(event)
 			local playersGui = player.gui[guiLocation] --top or left
 			local seconds
 			
+			if playersGui["ACT-frame_"..playerIndex] then
+				playersGui["ACT-frame_"..playerIndex].destroy()
+			end
 			playersGui.add{type = "frame", name = "ACT-frame_"..playerIndex}
 			local ACTFrame = playersGui["ACT-frame_"..playerIndex]
 			ACTFrame.add{type = "flow", name = "recipe", direction = "vertical"}
@@ -111,10 +119,12 @@ local function setupGui(event)
 				ACTFrame["products"].add{type = "label", name = "products_label", caption = "Products"}
 						
 				for i = 1, #recipe.ingredients do
+					--log("ingredient "..serpent.block(recipe.ingredients[i], {comment=false}))
 					addItemFrame(player, ACTFrame, playerIndex, i, recipe.ingredients[i], seconds, "ingredients", effects)
 				end
 				
 				for i = 1, #recipe.products do
+					--log("product "..serpent.block(recipe.products[i], {comment=false}))
 					addItemFrame(player, ACTFrame, playerIndex, i, recipe.products[i], seconds, "products", effects)
 				end
 			end
@@ -123,12 +133,12 @@ local function setupGui(event)
 end
 
 function addItemFrame(player, ACTFrame, playerIndex, itemIndex, product, seconds, outerFrameName, effects)
-	ACTFrame[outerFrameName].add{type = "flow", name = product.name}
-	ACTFrame[outerFrameName][product.name].add{type = "sprite", name = outerFrameName..itemIndex, sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)}
+	ACTFrame[outerFrameName].add{type = "flow", name = product.name..itemIndex}
+	ACTFrame[outerFrameName][product.name..itemIndex].add{type = "sprite", name = outerFrameName..itemIndex, sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)}
 	if outerFrameName == "ingredients" then
-		ACTFrame[outerFrameName][product.name].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber((product.amount or product.amount_max) / seconds).."/s", tooltip = "Items per second"}
+		ACTFrame[outerFrameName][product.name..itemIndex].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber((product.amount or product.amount_max) / seconds).."/s", tooltip = "Items per second"}
 	else
-		ACTFrame[outerFrameName][product.name].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber(((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds).."/s", tooltip = "Items per second"}
+		ACTFrame[outerFrameName][product.name..itemIndex].add{type = "label", name = "IPS"..itemIndex, caption = truncateNumber(((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds).."/s", tooltip = "Items per second"}
 	end
 end
 
