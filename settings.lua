@@ -17,6 +17,6 @@ data:extend({
 		name = "ACT-max-slider-value",
 		setting_type = "runtime-per-user",
 		minimum_value = 25,
-		default_value = 100
+		default_value = 200
 	}
 })
