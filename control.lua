@@ -140,8 +140,8 @@ local function inserterSpriteParams(sourceType, stackBonus, IPS)
 				params[name].stack = throughputFromSource[sourceType][i][stack]
 			end
 		end
-		if stop >=25 then
-			game.print("while-loop force stopped. This should not be - something may have gone wrong! Notify ACT Mod Author") --add log info here?
+		if stop >=12 then
+			--game.print("while-loop force stopped. This should not be - something may have gone wrong! Notify ACT Mod Author") --add log info here?
 			break
 		end
 	end
@@ -154,8 +154,8 @@ local function addInserterSprites(ACTAssemplerFlowI_PWrap, productName, belt, te
 	local beltSpriteParams = inserterSpriteParams(belt, checkStackBonus(techs), IPS)
 	local i = 0
 	for k,v in pairs(beltSpriteParams) do --IPS inserter sprites
-		if v.count ~=0 then
-			ACTAssemplerFlowI_PWrap[productName.."-ingredientWrap"][productName.."-inserter-sprite-wrap"]["belt"].add{type = "sprite-button", name = productName.."-inserter-sprite-"..i, sprite = "entity/"..k, style = "ACT_inserter", number = v.count, tooltip = localizeString(k).." moves upto "..v.stack.." Items Per Second "..toFrom.." a belt"} 
+		if v.count ~= 0 then
+			ACTAssemplerFlowI_PWrap[productName.."-ingredientWrap"][productName.."-inserter-sprite-wrap"]["belt"].add{type = "sprite-button", name = productName.."-inserter-sprite-"..i, sprite = "entity/"..k, style = "ACT_inserter", number = v.count, tooltip = localizeString(k).." moves upto "..v.stack.." Items Per Second "..toFrom.." a belt"}
 		end
 		i = i + 1
 	end
