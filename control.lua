@@ -1,4 +1,4 @@
-local function localizeString(st)
+local function niceString(st)
 	return string.sub(st, 1, 1):upper()..string.sub(st, 2):gsub("-", " ")
 end
 
@@ -39,6 +39,14 @@ local function spriteCheck(player, spritePath)
 	end
 end
 
+local function closeGui(event)
+	local player = game.players[event.player_index]
+	local guiLocation = player.mod_settings["ACT-Gui-Location"].value
+	if player.gui[guiLocation]["ACT-frame_"..event.player_index] then
+		player.gui[guiLocation]["ACT-frame_"..event.player_index].destroy()
+	end
+end
+
 local function pbarTraits(IPS)
 	IPS = tonumber(IPS)
 	local belt = ""
@@ -46,25 +54,25 @@ local function pbarTraits(IPS)
 	local value = 0
 	local tool = ""
 	if IPS <= 13.33 then
-		belt = 1
+		belt = "transport-belt"
 		color = {r = 0.98, g = 0.73, b = 0.0} -- 250, 186, 0
 		value = IPS / 13.33
-		tool = truncateNumber(IPS / 13.33 * 100, 2).."% of a Yellow Belt"
+		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / 13.33 * 100, 2)),  game.item_prototypes[belt].localised_name}
 	elseif IPS <= 26.66 then
-		belt = 2
+		belt = "fast-transport-belt"
 		color = {r = 0.98, g = 0.27, b = 0.06} -- 250, 69, 15
 		value = IPS / 26.66
-		tool = truncateNumber(IPS / 26.66 * 100, 2).."% of a Red Belt"
+		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / 26.66 * 100, 2)), game.item_prototypes[belt].localised_name}
 	elseif IPS <= 40 then
-		belt = 3
+		belt = "express-transport-belt"
 		color = {r = 0.15, g = 0.67, b = 0.71} -- 38, 171, 181
 		value = IPS / 40
-		tool = truncateNumber(IPS / 40 * 100, 2).."% of a Blue Belt"
+		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / 40 * 100, 2)), game.item_prototypes[belt].localised_name}
 	else
-		belt = 3
+		belt = "express-transport-belt"
 		color = {r = 1, g = 1, b = 1} --white
 		value = IPS / 40
-		tool = truncateNumber(IPS / 40 * 100, 2).." Blue Belts"
+		tool = {'', tostring(truncateNumber(IPS / 40, 2)), " ", game.item_prototypes[belt].localised_name, "s"}--plural of s will be a problem
 	end
 	return {belt = belt, color = color, value = value, tool = tool}
 end
@@ -97,25 +105,25 @@ local function inserterSpriteParams(sourceType, stackBonus, IPS)
 									["stack-inserter"] = {count = 0, stack = 0}
 								}
 	local throughputFromSource = {
-		{
+		["transport-belt"] = {
 			{0.83, 1.57, 2.00, name = "inserter", stack = stackBonus.nonStack},
 			{2.22, 4.17, 5.71, name = "fast-inserter", stack = stackBonus.nonStack},
 			{2.308, 3.636, 4.185, 4.706, 4.999, 5.251, 0, 5.580, 0, 5.714, 0, 5.901, name = "stack-inserter", stack = stackBonus.stack},
 			name = "transport-belt",
 		},
-		{
+		["fast-transport-belt"] = {
 			{0.74, 1.48, 2.11, name = "inserter", stack = stackBonus.nonStack},
 			{2.22, 3.81, 5.45, name = "fast-inserter", stack = stackBonus.nonStack},
 			{2.308, 4.000, 5.175, 6.154, 6.886, 7.500, 0, 8.421, 0, 9.091, 0, 9.600, name = "stack-inserter", stack = stackBonus.stack}, 
 			name = "fast-transport-belt",
 		},
-		{
+		["express-transport-belt"] = {
 			{0.77, 1.45, 2.07, name = "inserter", stack = stackBonus.nonStack},
 			{2.14, 4.00, 5.46, name = "fast-inserter", stack = stackBonus.nonStack},
 			{2.308, 4.138, 5.637, 6.857, 7.924, 9.000, 0, 10.213, 0, 11.321, 0, 12.203, name = "stack-inserter", stack = stackBonus.stack},
 			name = "express-transport-belt",
 		},
-		{
+		["chest"] = {
 			{.83, 1.66, 2.49, name = "inserter", stack = stackBonus.nonStack},
 			{2.31, 4.62, 6.93, name = "fast-inserter", stack = stackBonus.nonStack},
 			{0, 4.62, 6.93 , 9.24, 11.55, 13.86, 0, 18.48, 0, 23.1, 0, 27.72, name = "stack-inserter", stack = stackBonus.stack},
@@ -124,20 +132,20 @@ local function inserterSpriteParams(sourceType, stackBonus, IPS)
 	}
 	
 	local stop = 0
-	while IPS > 0 do		--sourceType is 1 through 4
+	while IPS > 0 do		--sourceType is each belt type or chest
 		stop = stop + 1
 		for i = 1, #throughputFromSource[sourceType] do --each inserter 1,2, and 3-basic, fast, stack
-			local stack = throughputFromSource[sourceType][i].stack
+			local stack1 = throughputFromSource[sourceType][i].stack
 			local name = throughputFromSource[sourceType][i].name
-			if IPS - throughputFromSource[sourceType][i][stack] <=0 then
-				IPS = IPS - throughputFromSource[sourceType][i][stack]
+			if IPS - stack1 <=0 then
+				IPS = IPS - stack1
 				params[name].count = params[name].count + 1
-				params[name].stack = throughputFromSource[sourceType][i][stack]
+				params[name].stack = throughputFromSource[sourceType][i][stack1]
 				break
 			elseif i == 3 then
-				IPS = IPS - throughputFromSource[sourceType][i][stack]
+				IPS = IPS - stack1
 				params[name].count = params[name].count + 1
-				params[name].stack = throughputFromSource[sourceType][i][stack]
+				params[name].stack = throughputFromSource[sourceType][i][stack1]
 			end
 		end
 		if stop >=12 then
@@ -148,26 +156,27 @@ local function inserterSpriteParams(sourceType, stackBonus, IPS)
 	return params
 end
 
-local function addInserterSprites(ACTAssemplerFlowI_PWrap, productName, belt, techs, IPS, toFrom)
+local function addInserterSprites(insertSpriteWrap, productName, belt, techs, IPS, toFrom)
 	-- START of Product Inserter sprites
 		-- START of Belt limited
 	local beltSpriteParams = inserterSpriteParams(belt, checkStackBonus(techs), IPS)
 	local i = 0
 	for k,v in pairs(beltSpriteParams) do --IPS inserter sprites
-		if v.count ~= 0 then
-			ACTAssemplerFlowI_PWrap[productName.."-ingredientWrap"][productName.."-inserter-sprite-wrap"]["belt"].add{type = "sprite-button", name = productName.."-inserter-sprite-"..i, sprite = "entity/"..k, style = "ACT_inserter", number = v.count, tooltip = localizeString(k).." moves upto "..v.stack.." Items Per Second "..toFrom.." a belt"}
-		end
+		if v.count ~= 0 then 
+		local prototypeProduct = game.item_prototypes[k]
+			insertSpriteWrap["belt"].add{type = "sprite-button", name = productName.."-inserter-sprite-"..i, sprite = "entity/"..k, style = "ACT_inserter", number = v.count, tooltip = {'tooltips.inserter', prototypeProduct.localised_name, v.stack, toFrom, {'tooltips.belt'}}}
+		end 
 		i = i + 1
 	end
 		-- END of belt limited
-		-- START of chest limited		
-	
-	local chestSpriteParams = inserterSpriteParams(4, checkStackBonus(techs), IPS)
-	--game.print("chestSpriteParams "..serpent.block(chestSpriteParams))
+		
+		-- START of chest limited
+	local chestSpriteParams = inserterSpriteParams("chest", checkStackBonus(techs), IPS)
 	local i = 0
-	for k,v in pairs(chestSpriteParams) do 
-		if v.count ~=0 then
-			ACTAssemplerFlowI_PWrap[productName.."-ingredientWrap"][productName.."-inserter-sprite-wrap"]["chest"].add{type = "sprite-button", name = productName.."-inserter-sprite-"..i, sprite = "entity/"..k, style = "ACT_inserter", number = v.count, tooltip = localizeString(k).. " moves upto "..v.stack.." Items Per Second "..toFrom.." a chest"}
+	for k,v in pairs(chestSpriteParams) do
+		local prototypeProduct = game.item_prototypes[k]
+		if v.count ~= 0 then
+			insertSpriteWrap["chest"].add{type = "sprite-button", name = productName.."-inserter-sprite-"..i, sprite = "entity/"..k, style = "ACT_inserter", number = v.count, tooltip = {'tooltips.inserter', prototypeProduct.localised_name, v.stack, toFrom, {'tooltips.chest'}}}
 		end
 		i = i + 1
 	end
@@ -175,64 +184,73 @@ local function addInserterSprites(ACTAssemplerFlowI_PWrap, productName, belt, te
 	-- END of Product Inserter sprites
 end
 
-local function addItemFrame(player, ACTAssemplerFlowI_PWrap, product, seconds, effects)
-	ACTAssemplerFlowI_PWrap.add{type = "flow" --[[--]], name = product.name.."-ingredientWrap", direction = "horizontal"}
----[[tooltip--]]ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"].tooltip = product.name.."-ingredientWrap"
+local function addItemFrame(player, ACTAssemplerFlowI_PWrap, product, seconds, effects, i, sliderValue)
+	ACTAssemplerFlowI_PWrap.add{type = "flow" --[[--]], name = product.name.."-ingredientWrap"..i, direction = "horizontal"}
+	local nameIngWrap = ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"..i]
+---[[tooltip--]]nameIngWrap.tooltip = product.name.."-ingredientWrap"..i
 
-	ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"].add{type = "flow" --[[--]], name = product.name.."-PbarFlowWrap", direction = "vertical"}
----[[tooltip--]]ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"].tooltip = product.name.."-PbarFlowWrap"
-	ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"].add{type = "flow" --[[--]], name = product.name.."-inserter-sprite-wrap", direction = "vertical"}
----[[tooltip--]]ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-inserter-sprite-wrap"].tooltip = product.name.."-inserter-sprite-wrap"
+	nameIngWrap.add{type = "flow" --[[--]], name = product.name.."-PbarFlowWrap", direction = "vertical"}
+	local namePbarWrap = nameIngWrap[product.name.."-PbarFlowWrap"]
+---[[tooltip--]]namePbarWrap.tooltip = product.name.."-PbarFlowWrap"
 
-	ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-inserter-sprite-wrap"].add{type = "flow" --[[--]], name = "belt", direction = "horizontal"}
----[[tooltip--]]ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-inserter-sprite-wrap"]["belt"].tooltip = "belt"
+	nameIngWrap.add{type = "flow" --[[--]], name = product.name.."-inserter-sprite-wrap", direction = "vertical"}
+	local insertSpriteWrap = nameIngWrap[product.name.."-inserter-sprite-wrap"]
+---[[tooltip--]]insertSpriteWrap.tooltip = product.name.."-inserter-sprite-wrap"
+
+	insertSpriteWrap.add{type = "flow" --[[--]], name = "belt", direction = "horizontal"}
+---[[tooltip--]]insertSpriteWrap["belt"].tooltip = "belt"
 	
-	ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-inserter-sprite-wrap"].add{type = "flow" --[[--]], name = "chest", direction = "horizontal"}
----[[tooltip--]]ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-inserter-sprite-wrap"]["chest"].tooltip = "chest"
+	insertSpriteWrap.add{type = "flow" --[[--]], name = "chest", direction = "horizontal"}
+---[[tooltip--]]insertSpriteWrap["chest"].tooltip = "chest"
 
 
-	ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"].add{type = "flow" --[[--]], name = product.name.."IPS"}
----[[tooltip--]]ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."IPS"].tooltip = product.name.."IPS"
+	namePbarWrap.add{type = "flow" --[[--]], name = product.name.."IPS"}
+	local nameIPS = namePbarWrap[product.name.."IPS"]
+---[[tooltip--]]nameIPS.tooltip = product.name.."IPS"
 
-	ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."IPS"].add{type = "sprite", name = product.name.."Sprite", sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = localizeString(product.name)} 
+	local prototypeProduct = game.item_prototypes[product.name] or game.fluid_prototypes[product.name]
+	nameIPS.add{type = "sprite", name = product.name.."Sprite", sprite = spriteCheck(player, product.type.."/"..product.name), tooltip = prototypeProduct.localised_name}
 	
-	if product.type ~= "fluid" then
-		ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-inserter-sprite-wrap"]["belt"].add{type = "label", name = "belt-label", caption = "Belt"}
-		ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-inserter-sprite-wrap"]["chest"].add{type = "label", name = "chest-label", caption = "Chest"}
-		ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"].add{type = "progressbar", name = product.name.."pbar"}
-		ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."pbar"].style.maximal_width = 95
-	end
-	
-	if ACTAssemplerFlowI_PWrap.name == "ingredients" then 
+	if ACTAssemplerFlowI_PWrap.name == "ingredients" then
 		local IPS = (product.amount or product.amount_max) / seconds --figure out if this does or does not need productivity bonus
 		
-		IngredientIPS[product.name.."-ingredientWrap"] = IPS
-		ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."IPS"].add{type = "label", name = product.name.."Label", caption = truncateNumber(IPS, 2).."/s", tooltip = "Items per second"} 
+		IngredientIPS[product.name.."-ingredientWrap"..i] = IPS
+		nameIPS.add{type = "label", name = product.name.."Label", caption = truncateNumber(IPS * sliderValue, 2).."/s", tooltip = {'tooltips.IPS'}}
 		
-		local pbarInitial = pbarTraits(IPS)
-
 		if product.type ~= "fluid" then
-			addInserterSprites(ACTAssemplerFlowI_PWrap, product.name, pbarInitial.belt, player.force.technologies, truncateNumber(IPS, 2), "from")
+			insertSpriteWrap["belt"].add{type = "label", name = "belt-label", caption = {'captions.belt'}}
+			insertSpriteWrap["chest"].add{type = "label", name = "chest-label", caption = {'captions.chest'}}
+			namePbarWrap.add{type = "progressbar", name = product.name.."pbar"}
+			local namePbar = namePbarWrap[product.name.."pbar"]
+			namePbar.style.maximal_width = 95
+			
+			local pbarInitial = pbarTraits(IPS * sliderValue)
+			addInserterSprites(insertSpriteWrap, product.name, pbarInitial.belt, player.force.technologies, truncateNumber(IPS, 2), {'tooltips.from'})
 			
 			-- Progressbar
-			ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."pbar"].style.color = pbarInitial.color
-			ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."pbar"].value = pbarInitial.value
-			ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."pbar"].tooltip = pbarInitial.tool
+			namePbar.style.color = pbarInitial.color
+			namePbar.value = pbarInitial.value
+			namePbar.tooltip = pbarInitial.tool
 		end
 	else -- "products"
 		local IPS = ((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds
-		productIPS[product.name.."-ingredientWrap"] = IPS
-		ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."IPS"].add{type = "label", name = product.name.."Label", caption = truncateNumber(IPS, 2).."/s", tooltip = "Items per second"} 
-		
-		local pbarInitial = pbarTraits(IPS)
-		
+		productIPS[product.name.."-ingredientWrap"..i] = IPS
+		nameIPS.add{type = "label", name = product.name.."Label", caption = truncateNumber(IPS * sliderValue, 2).."/s", tooltip = {'tooltips.IPS'}}
+	
 		if product.type ~= "fluid" then
-			addInserterSprites(ACTAssemplerFlowI_PWrap, product.name, pbarInitial.belt, player.force.technologies, truncateNumber(IPS, 2), "to")
+			insertSpriteWrap["belt"].add{type = "label", name = "belt-label", caption = {'captions.belt'}}
+			insertSpriteWrap["chest"].add{type = "label", name = "chest-label", caption = {'captions.chest'}}
+			namePbarWrap.add{type = "progressbar", name = product.name.."pbar"}
+			local namePbar = namePbarWrap[product.name.."pbar"]
+			namePbar.style.maximal_width = 95
+			
+			local pbarInitial = pbarTraits(IPS * sliderValue)
+			addInserterSprites(insertSpriteWrap, product.name, pbarInitial.belt, player.force.technologies, truncateNumber(IPS, 2), {'tooltips.to'})
 			
 			-- Progressbar
-			ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."pbar"].style.color = pbarInitial.color
-			ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."pbar"].value = pbarInitial.value
-			ACTAssemplerFlowI_PWrap[product.name.."-ingredientWrap"][product.name.."-PbarFlowWrap"][product.name.."pbar"].tooltip = pbarInitial.tool
+			namePbar.style.color = pbarInitial.color
+			namePbar.value = pbarInitial.value
+			namePbar.tooltip = pbarInitial.tool
 		end
 	end
 end
@@ -241,7 +259,7 @@ local function setupGui(event)
 	if event.gui_type == defines.gui_type.entity then
 		local entity = event.entity
 		
-		if	entity and (--add in mining drills/reactor/
+		if entity and (--add in mining drills/reactor/
 		--/c game.print(serpent.block(game.player.selected.prototype.mineable_properties))
 				entity.type == "assembling-machine" or
 				entity.type == "furnace" or
@@ -251,11 +269,10 @@ local function setupGui(event)
 			local playerIndex = event.player_index
 			local player = game.players[playerIndex]
 			local spritePath = spriteCheck(player, "entity/"..entity.name)
-			local lName = localizeString(entity.name)
-			local message = "No recipe information"
+			local lName = niceString(entity.name)
+			local message = {'captions.no-recipe'}
 			
 			local guiLocation = player.mod_settings["ACT-Gui-Location"].value
-			local playerSliderSetting = player.mod_settings["ACT-max-slider-value"].value
 			
 			local playersGui = player.gui[guiLocation] --top or left
 			local seconds = 1
@@ -277,16 +294,27 @@ local function setupGui(event)
 			ACTAssemplerFlow.add{type = "flow" --[[--]], name = "recipe", direction = "vertical"}
 ---[[tooltip--]]ACTAssemplerFlow["recipe"].tooltip = "recipe"
 			local recipeFlow = ACTAssemplerFlow["recipe"]
-			
-			recipeFlow.add{type = "label", name = "recipe_label", caption = "Recipe"}
-			
+			recipeFlow.add{type = "label", name = "recipe_label", caption = {'captions.recipe'}}
 			recipeFlow.add{type = "flow" --[[--]], name = "recipeInfo", direction = "horizontal"}
 ---[[tooltip--]]recipeFlow["recipeInfo"].tooltip = "recipeInfo"
 			local recipeInfoFlow = recipeFlow["recipeInfo"]
-			recipeInfoFlow.add{type = "sprite-button", name = playerIndex.."_sprite-button", sprite = spritePath, tooltip = lName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+			recipeInfoFlow.add{type = "sprite-button", name = playerIndex.."_sprite-button", sprite = spritePath, tooltip = {'tooltips.reset', entity.localised_name}}
 			recipeInfoFlow.add{type = "label", name = lName.."_"..playerIndex.."_label", caption = message}
-			
+		
 			if recipe then
+				if not global.ACT_slider then
+					global.ACT_slider = {}
+				end
+				if not global.ACT_slider[player.name] then
+					global.ACT_slider[player.name] = {}
+				end
+				if not global.ACT_slider[player.name][recipe.name] then
+					global.ACT_slider[player.name][recipe.name] = {
+						value = 1
+					}
+				end
+				local sliderValue = truncateNumber(global.ACT_slider[player.name][recipe.name].value, 0)
+	
 				local craftSpeed = entity.prototype.crafting_speed
 				local effects = {
 					consumption={bonus=0.0},
@@ -308,18 +336,17 @@ local function setupGui(event)
 				local simple = player.mod_settings["ACT-simple-text"].value --t or f
 				local base = recipe.energy
 				seconds = base/(craftSpeed+percent)
-				local lRName = localizeString(recipe.name)
+				local lRName = niceString(recipe.name)
 				spritePath = spriteCheck(player, "recipe/"..recipe.name)
 				
 				if simple then
-					message = ""
+					message = {'captions.seconds', truncateNumber(seconds, 2)}
 				else
-					message = lRName.." crafts in: "
+					message = {'captions.longSeconds', recipe.localised_name, {'captions.seconds', truncateNumber(seconds, 2)}}
 				end
-				message = message..truncateNumber(seconds, 2).." seconds"
 				if recipeInfoFlow[playerIndex.."_sprite-button"] then
 					recipeInfoFlow[playerIndex.."_sprite-button"].destroy()
-					recipeInfoFlow.add{type = "sprite-button", name = playerIndex.."_sprite-button", sprite = spritePath, tooltip = lRName.." - set/reset recipe, or add/remove modules, then click here to refresh"}
+					recipeInfoFlow.add{type = "sprite-button", name = playerIndex.."_sprite-button", sprite = spritePath, tooltip = {'tooltips.reset', recipe.localised_name}}
 				end
 				
 				if recipeInfoFlow[lName.."_"..playerIndex.."_label"] then
@@ -329,48 +356,143 @@ local function setupGui(event)
 				
 				ACTAssemplerFlow.add{type = "flow" --[[--]], name = "ingredients", direction = "vertical"}
 ---[[tooltip--]]ACTAssemplerFlow["ingredients"].tooltip = "ingredients"
-				ACTAssemplerFlow["ingredients"].add{type = "label", name = "ingredients_label", caption = "Ingredients"}
+				ACTAssemplerFlow["ingredients"].add{type = "label", name = "ingredients_label", caption = {'captions.ingredients'}}
 
 				ACTAssemplerFlow.add{type = "flow" --[[--]], name = "products", direction = "vertical"}
 ---[[tooltip--]]ACTAssemplerFlow["products"].tooltip = "products"
-				ACTAssemplerFlow["products"].add{type = "label", name = "products_label", caption = "Products"}
+				ACTAssemplerFlow["products"].add{type = "label", name = "products_label", caption = {'captions.products'}}
 				
 				IngredientIPS = {}
 				productIPS = {}
 
 				for i = 1, #recipe.ingredients do
-					addItemFrame(player, ACTAssemplerFlow["ingredients"], recipe.ingredients[i], seconds, effects)
+					addItemFrame(player, ACTAssemplerFlow["ingredients"], recipe.ingredients[i], seconds, effects, i, sliderValue)
 				end
 				
 				for i = 1, #recipe.products do
-					addItemFrame(player, ACTAssemplerFlow["products"], recipe.products[i], seconds, effects)
+					addItemFrame(player, ACTAssemplerFlow["products"], recipe.products[i], seconds, effects, i, sliderValue)
 				end
 				
 				if recipe.name == "rocket-part" then
-					addItemFrame(player, ACTAssemplerFlow["products"], {amount = 10, name = "space-science-pack", type = "item"}, seconds, effects)					
+					addItemFrame(player, ACTAssemplerFlow["products"], {amount = 10, name = "space-science-pack", type = "item"}, seconds, effects, 0, sliderValue)					
 				end
 				
 				-- START OF MACHINE_FLOW DATA
-				ACTMachineFlow.add{type = "label", name = "sliderLabel", caption = "Adjust number of machines"}
+				ACTMachineFlow.add{type = "label", name = "sliderLabel", caption = {'captions.adjust'}}
 				ACTMachineFlow.add{type = "flow" --[[--]], name = "sliderFlow", direction = "horizontal"}
 ---[[tooltip--]]ACTMachineFlow["sliderFlow"].tooltip = "sliderFlow"
-				if event.slider_value then
-					ACTMachineFlow["sliderFlow"].add{type = "slider", name = playerIndex.."_slider", minimum_value = 1, maximum_value = playerSliderSetting, value = event.slider_value}
-				else
-					ACTMachineFlow["sliderFlow"].add{type = "slider", name = playerIndex.."_slider", minimum_value = 1, maximum_value = playerSliderSetting, value = 1}
-				end
-				ACTMachineFlow["sliderFlow"].add{type = "label", name = "sliderLabel", caption = truncateNumber(ACTMachineFlow["sliderFlow"][playerIndex.."_slider"].slider_value, 0).." "..localizeString(entity.name)}
-			
+				local playerSliderSetting = player.mod_settings["ACT-max-slider-value"].value
+				
+				ACTMachineFlow["sliderFlow"].add{type = "slider", name = playerIndex.."_slider", minimum_value = 1, maximum_value = playerSliderSetting, value = truncateNumber(sliderValue, 0)}
+				ACTMachineFlow["sliderFlow"].add{type = "label", name = "sliderLabel", caption = {'', truncateNumber(ACTMachineFlow["sliderFlow"][playerIndex.."_slider"].slider_value, 0), " ", entity.localised_name}}
+				-- END OF MACHINE_FLOW DATA
 			end
+		else
+			closeGui(event)
 		end
 	end
 end
 
-local function closeGui(event)
-	local player = game.players[event.player_index]
-	local guiLocation = player.mod_settings["ACT-Gui-Location"].value
-	if player.gui[guiLocation]["ACT-frame_"..event.player_index] then
-		player.gui[guiLocation]["ACT-frame_"..event.player_index].destroy()
+local function playerSlid(event)
+	if event.element.name == event.player_index.."_slider" then
+		local playerIndex = event.player_index
+		local player = game.players[playerIndex]
+		local guiLocation = player.mod_settings["ACT-Gui-Location"].value
+		local playersGui = player.gui[guiLocation] --top or left
+		local sliderLabelCaption = tostring(playersGui["ACT-frame_"..event.player_index]["machineFlow"]["sliderFlow"]["sliderLabel"].caption)
+		local sliderNum = string.sub(sliderLabelCaption, string.find(sliderLabelCaption, "%d+"))
+		local entity = player.opened
+		
+		if entity then
+			local recipe = getRecipe(entity)
+			if recipe then
+				if math.abs(sliderNum - event.element.slider_value) >= .49 then
+					if global.ACT_slider[player.name][recipe.name] then
+						global.ACT_slider[player.name][recipe.name].value = event.element.slider_value
+					end
+					local ingredients = playersGui["ACT-frame_"..event.player_index]["assemblerFlow"]["ingredients"]
+					local products = playersGui["ACT-frame_"..event.player_index]["assemblerFlow"]["products"]
+					
+					local iChildren = ingredients.children_names
+					local pChildren = products.children_names
+					
+					local sliderValue = truncateNumber(event.element.slider_value, 0)
+					
+					playersGui["ACT-frame_"..event.player_index]["machineFlow"]["sliderFlow"]["sliderLabel"].caption = {'', sliderValue, " ", entity.localised_name}
+					
+					for i = 1, #iChildren do
+						if string.find(iChildren[i], "-ingredientWrap") then
+							local iName = string.sub(iChildren[i], 1, string.find(iChildren[i], "-ingredientWrap") - 1)
+							local productType = "fluid"
+							for i = 1, #recipe.ingredients do
+								if recipe.ingredients[i].name == iName then
+									productType = recipe.ingredients[i].type
+								end
+							end
+							local product = game.item_prototypes[iName] or game.recipe_prototypes[iName] or game.fluid_prototypes[iName]
+							ingredients[iChildren[i]][iName.."-PbarFlowWrap"][iName.."IPS"][iName.."Label"].caption = tostring(truncateNumber(IngredientIPS[iChildren[i]] * sliderValue, 2)).."/s"
+							local pbarSlider = pbarTraits(IngredientIPS[iChildren[i]] * sliderValue)
+							local belt = ingredients[iChildren[i]][iName.."-inserter-sprite-wrap"]["belt"]
+							local chest = ingredients[iChildren[i]][iName.."-inserter-sprite-wrap"]["chest"]
+							local pbar = ingredients[iChildren[i]][iName.."-PbarFlowWrap"][iName.."pbar"]
+							
+							belt.clear()
+							chest.clear()
+							
+							if productType ~= "fluid" then
+								belt.add{type = "label", name = "belt-label", caption = {'captions.belt'}}
+								chest.add{type = "label", name = "chest-label", caption = {'captions.chest'}}
+								addInserterSprites(belt.parent, iName, pbarSlider.belt, player.force.technologies, truncateNumber(IngredientIPS[iChildren[i]], 2), {'tooltips.from'})
+							end
+							
+							if pbar then
+								pbar.style.color = pbarSlider.color
+								pbar.value = pbarSlider.value
+								pbar.tooltip = pbarSlider.tool
+							end
+						end
+					end
+					for i = 1, #pChildren do
+						if string.find(pChildren[i], "-ingredientWrap") then
+							local pName = string.sub(pChildren[i], 1, string.find(pChildren[i], "-ingredientWrap") - 1)
+							local productType = "fluid"
+							for i = 1, #recipe.products do
+								if recipe.products[i].name == pName then
+									productType = recipe.products[i].type
+								end
+							end
+							local product = game.item_prototypes[pName] or game.recipe_prototypes[pName] or game.fluid_prototypes[pName]
+							products[pChildren[i]][pName.."-PbarFlowWrap"][pName.."IPS"][pName.."Label"].caption = tostring(truncateNumber(productIPS[pChildren[i]] * sliderValue, 2)).."/s"
+							local pbarSlider = pbarTraits(productIPS[pChildren[i]] * sliderValue)
+							local belt = products[pChildren[i]][pName.."-inserter-sprite-wrap"]["belt"]
+							local chest = products[pChildren[i]][pName.."-inserter-sprite-wrap"]["chest"]
+							local pbar = products[pChildren[i]][pName.."-PbarFlowWrap"][pName.."pbar"]
+							
+							belt.clear()
+							chest.clear()
+							
+							if productType ~= "fluid" then
+								belt.add{type = "label", name = "belt-label", caption = {'captions.belt'}}
+								chest.add{type = "label", name = "chest-label", caption = {'captions.chest'}}
+								addInserterSprites(belt.parent, pName, pbarSlider.belt, player.force.technologies, truncateNumber(productIPS[pChildren[i]], 2), {'tooltips.to'})
+							end			
+							
+							if pbar then
+								pbar.style.color = pbarSlider.color
+								pbar.value = pbarSlider.value
+								pbar.tooltip = pbarSlider.tool
+							end
+						end
+					end
+				end
+			else
+				event.entity = player.opened
+				event.gui_type = defines.gui_type.entity
+				setupGui(event)
+			end
+		else
+			closeGui(event)
+		end
 	end
 end
 
@@ -382,92 +504,6 @@ local function playerClickedGui(event)
 		event.entity = player.opened
 		event.gui_type = defines.gui_type.entity
 		setupGui(event)
-	end
-end
-
-local function playerSlid(event)
-	if event.element.name == event.player_index.."_slider" then
-		local playerIndex = event.player_index
-		local player = game.players[playerIndex]
-		local guiLocation = player.mod_settings["ACT-Gui-Location"].value
-		local playersGui = player.gui[guiLocation] --top or left
-		local sliderLabelCaption = playersGui["ACT-frame_"..event.player_index]["machineFlow"]["sliderFlow"]["sliderLabel"].caption
-		local sliderNum = string.sub(sliderLabelCaption, string.find(sliderLabelCaption, "%d+"))
-		local entity = player.opened
-		
-		local recipe = getRecipe(entity)
-		if recipe then
-			if math.abs(sliderNum - event.element.slider_value) >= .5 then
-				local ingredients = playersGui["ACT-frame_"..event.player_index]["assemblerFlow"]["ingredients"]
-				local products = playersGui["ACT-frame_"..event.player_index]["assemblerFlow"]["products"]
-				
-				local iChildren = ingredients.children_names
-				local pChildren = products.children_names
-				
-				local sliderValue = truncateNumber(event.element.slider_value, 0)
-				
-				playersGui["ACT-frame_"..event.player_index]["machineFlow"]["sliderFlow"]["sliderLabel"].caption = sliderValue.." "..localizeString(player.opened.name)
-				
-				for i = 1, #iChildren do
-					if string.find(iChildren[i], "-ingredientWrap") then
-						local iName = string.sub(iChildren[i], 1, string.find(iChildren[i], "-ingredientWrap") - 1)
-						local productType
-						for i = 1, #recipe.ingredients do
-							if recipe.ingredients[i].name == iName then
-								productType = recipe.ingredients[i].type
-							end
-						end
-						local product = game.item_prototypes[iName] or game.recipe_prototypes[iName] or game.fluid_prototypes[iName]
-						ingredients[iName.."-ingredientWrap"][iName.."-PbarFlowWrap"][iName.."IPS"][iName.."Label"].caption = tostring(truncateNumber(IngredientIPS[iChildren[i]] * sliderValue, 2)).."/s"
-						local pbarSlider = pbarTraits(IngredientIPS[iChildren[i]] * sliderValue)
-						ingredients[iName.."-ingredientWrap"][iName.."-inserter-sprite-wrap"]["belt"].clear()
-						ingredients[iName.."-ingredientWrap"][iName.."-inserter-sprite-wrap"]["chest"].clear()
-						if productType ~= "fluid" then
-							ingredients[iName.."-ingredientWrap"][iName.."-inserter-sprite-wrap"]["belt"].add{type = "label", name = "belt-label", caption = "Belt"}
-							ingredients[iName.."-ingredientWrap"][iName.."-inserter-sprite-wrap"]["chest"].add{type = "label", name = "chest-label", caption = "Chest"}
-							addInserterSprites(ingredients, iName, pbarSlider.belt, player.force.technologies, truncateNumber(IngredientIPS[iChildren[i]], 2), "from")
-						end
-						if ingredients[iName.."-ingredientWrap"][iName.."-PbarFlowWrap"][iName.."pbar"] then
-							ingredients[iName.."-ingredientWrap"][iName.."-PbarFlowWrap"][iName.."pbar"].style.color = pbarSlider.color
-							ingredients[iName.."-ingredientWrap"][iName.."-PbarFlowWrap"][iName.."pbar"].value = pbarSlider.value
-							ingredients[iName.."-ingredientWrap"][iName.."-PbarFlowWrap"][iName.."pbar"].tooltip = pbarSlider.tool
-						end
-					end
-				end
-				for i = 1, #pChildren do
-					if string.find(pChildren[i], "-ingredientWrap") then
-						local pName = string.sub(pChildren[i], 1, string.find(pChildren[i], "-ingredientWrap") - 1)
-						local productType
-						for i = 1, #recipe.products do
-							if recipe.products[i].name == pName then
-								productType = recipe.products[i].type
-							end
-						end
-						local product = game.item_prototypes[pName] or game.recipe_prototypes[pName] or game.fluid_prototypes[pName]
-						products[pName.."-ingredientWrap"][pName.."-PbarFlowWrap"][pName.."IPS"][pName.."Label"].caption = tostring(truncateNumber(productIPS[pChildren[i]] * sliderValue, 2)).."/s"
-						local pbarSlider = pbarTraits(productIPS[pChildren[i]] * sliderValue)
-						
-						products[pName.."-ingredientWrap"][pName.."-inserter-sprite-wrap"]["belt"].clear()
-						products[pName.."-ingredientWrap"][pName.."-inserter-sprite-wrap"]["chest"].clear()
-						if productType ~= "fluid" then
-						
-							products[pName.."-ingredientWrap"][pName.."-inserter-sprite-wrap"]["belt"].add{type = "label", name = "belt-label", caption = "Belt"}
-							products[pName.."-ingredientWrap"][pName.."-inserter-sprite-wrap"]["chest"].add{type = "label", name = "chest-label", caption = "Chest"}
-							addInserterSprites(products, pName, pbarSlider.belt, player.force.technologies, truncateNumber(productIPS[pChildren[i]], 2), "to")
-						end			
-						if products[pName.."-ingredientWrap"][pName.."-PbarFlowWrap"][pName.."pbar"] then
-							products[pName.."-ingredientWrap"][pName.."-PbarFlowWrap"][pName.."pbar"].style.color = pbarSlider.color
-							products[pName.."-ingredientWrap"][pName.."-PbarFlowWrap"][pName.."pbar"].value = pbarSlider.value
-							products[pName.."-ingredientWrap"][pName.."-PbarFlowWrap"][pName.."pbar"].tooltip = pbarSlider.tool
-						end
-					end
-				end
-			end
-		else
-			event.entity = player.opened
-			event.gui_type = defines.gui_type.entity
-			setupGui(event)
-		end
 	end
 end
 
