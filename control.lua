@@ -126,7 +126,7 @@ local function inserterSpriteParams(sourceType, stackBonus, IPS)
 		["chest"] = {
 			{.83, 1.66, 2.49, name = "inserter", stack = stackBonus.nonStack},
 			{2.31, 4.62, 6.93, name = "fast-inserter", stack = stackBonus.nonStack},
-			{0, 4.62, 6.93 , 9.24, 11.55, 13.86, 0, 18.48, 0, 23.1, 0, 27.72, name = "stack-inserter", stack = stackBonus.stack},
+			{0, 4.62, 6.93, 9.24, 11.55, 13.86, 0, 18.48, 0, 23.1, 0, 27.72, name = "stack-inserter", stack = stackBonus.stack},
 			name = "chest",
 		}
 	}
@@ -135,17 +135,17 @@ local function inserterSpriteParams(sourceType, stackBonus, IPS)
 	while IPS > 0 do		--sourceType is each belt type or chest
 		stop = stop + 1
 		for i = 1, #throughputFromSource[sourceType] do --each inserter 1,2, and 3-basic, fast, stack
-			local stack1 = throughputFromSource[sourceType][i].stack
+			local stack = throughputFromSource[sourceType][i].stack
 			local name = throughputFromSource[sourceType][i].name
-			if IPS - stack1 <=0 then
-				IPS = IPS - stack1
+			if IPS - throughputFromSource[sourceType][i][stack] <=0 then
+				IPS = IPS - throughputFromSource[sourceType][i][stack]
 				params[name].count = params[name].count + 1
-				params[name].stack = throughputFromSource[sourceType][i][stack1]
+				params[name].stack = throughputFromSource[sourceType][i][stack]
 				break
 			elseif i == 3 then
-				IPS = IPS - stack1
+				IPS = IPS - throughputFromSource[sourceType][i][stack]
 				params[name].count = params[name].count + 1
-				params[name].stack = throughputFromSource[sourceType][i][stack1]
+				params[name].stack = throughputFromSource[sourceType][i][stack]
 			end
 		end
 		if stop >=12 then
