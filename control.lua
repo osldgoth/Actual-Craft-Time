@@ -160,6 +160,8 @@ local function addInserterSprites(insertSpriteWrap, productName, belt, techs, IP
 	-- START of Product Inserter sprites
 		-- START of Belt limited
 	local beltSpriteParams = inserterSpriteParams(belt, checkStackBonus(techs), IPS)
+	--local prototypeBelt = game.entity_prototypes[belt]
+	--game.print("belts: "..serpent.block{prototypeBelt})
 	local i = 0
 	for k,v in pairs(beltSpriteParams) do --IPS inserter sprites
 		if v.count ~= 0 then 
@@ -214,7 +216,7 @@ local function addItemFrame(player, ACTAssemplerFlowI_PWrap, product, seconds, e
 	if ACTAssemplerFlowI_PWrap.name == "ingredients" then
 		local IPS = (product.amount or product.amount_max) / seconds --figure out if this does or does not need productivity bonus
 		
-		IngredientIPS[product.name.."-ingredientWrap"..i] = IPS
+		IngredientIPS[player.name][product.name.."-ingredientWrap"..i] = IPS
 		nameIPS.add{type = "label", name = product.name.."Label", caption = truncateNumber(IPS * sliderValue, 2).."/s", tooltip = {'tooltips.IPS'}}
 		
 		if product.type ~= "fluid" then
@@ -234,7 +236,7 @@ local function addItemFrame(player, ACTAssemplerFlowI_PWrap, product, seconds, e
 		end
 	else -- "products"
 		local IPS = ((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds
-		productIPS[product.name.."-ingredientWrap"..i] = IPS
+		ProductIPS[player.name][product.name.."-ingredientWrap"..i] = IPS
 		nameIPS.add{type = "label", name = product.name.."Label", caption = truncateNumber(IPS * sliderValue, 2).."/s", tooltip = {'tooltips.IPS'}}
 	
 		if product.type ~= "fluid" then
@@ -362,9 +364,22 @@ local function setupGui(event)
 ---[[tooltip--]]ACTAssemplerFlow["products"].tooltip = "products"
 				ACTAssemplerFlow["products"].add{type = "label", name = "products_label", caption = {'captions.products'}}
 				
-				IngredientIPS = {}
-				productIPS = {}
-
+				if not IngredientIPS then
+					IngredientIPS = {}
+				end
+				if not IngredientIPS[player.name] then
+					IngredientIPS[player.name] = {}
+				end
+				
+				if not ProductIPS then
+					ProductIPS = {}
+				end					
+				if not ProductIPS[player.name] then
+					ProductIPS[player.name] = {}
+				end
+				
+				
+				
 				for i = 1, #recipe.ingredients do
 					addItemFrame(player, ACTAssemplerFlow["ingredients"], recipe.ingredients[i], seconds, effects, i, sliderValue)
 				end
@@ -423,6 +438,12 @@ local function playerSlid(event)
 					for i = 1, #iChildren do
 						if string.find(iChildren[i], "-ingredientWrap") then
 							local iName = string.sub(iChildren[i], 1, string.find(iChildren[i], "-ingredientWrap") - 1)
+game.print("slider value: "..sliderValue)
+game.print("full child name: "..iChildren[i])
+game.print("clean child name: "..iName)
+if IngredientIPS then
+	game.print("slider: "..serpent.block(IngredientIPS))
+end
 							local productType = "fluid"
 							for i = 1, #recipe.ingredients do
 								if recipe.ingredients[i].name == iName then
@@ -430,8 +451,8 @@ local function playerSlid(event)
 								end
 							end
 							local product = game.item_prototypes[iName] or game.recipe_prototypes[iName] or game.fluid_prototypes[iName]
-							ingredients[iChildren[i]][iName.."-PbarFlowWrap"][iName.."IPS"][iName.."Label"].caption = tostring(truncateNumber(IngredientIPS[iChildren[i]] * sliderValue, 2)).."/s"
-							local pbarSlider = pbarTraits(IngredientIPS[iChildren[i]] * sliderValue)
+							ingredients[iChildren[i]][iName.."-PbarFlowWrap"][iName.."IPS"][iName.."Label"].caption = tostring(truncateNumber(IngredientIPS[player.name][iChildren[i]] * sliderValue, 2)).."/s"
+							local pbarSlider = pbarTraits(IngredientIPS[player.name][iChildren[i]] * sliderValue)
 							local belt = ingredients[iChildren[i]][iName.."-inserter-sprite-wrap"]["belt"]
 							local chest = ingredients[iChildren[i]][iName.."-inserter-sprite-wrap"]["chest"]
 							local pbar = ingredients[iChildren[i]][iName.."-PbarFlowWrap"][iName.."pbar"]
@@ -442,7 +463,7 @@ local function playerSlid(event)
 							if productType ~= "fluid" then
 								belt.add{type = "label", name = "belt-label", caption = {'captions.belt'}}
 								chest.add{type = "label", name = "chest-label", caption = {'captions.chest'}}
-								addInserterSprites(belt.parent, iName, pbarSlider.belt, player.force.technologies, truncateNumber(IngredientIPS[iChildren[i]], 2), {'tooltips.from'})
+								addInserterSprites(belt.parent, iName, pbarSlider.belt, player.force.technologies, truncateNumber(IngredientIPS[player.name][iChildren[i]], 2), {'tooltips.from'})
 							end
 							
 							if pbar then
@@ -462,8 +483,8 @@ local function playerSlid(event)
 								end
 							end
 							local product = game.item_prototypes[pName] or game.recipe_prototypes[pName] or game.fluid_prototypes[pName]
-							products[pChildren[i]][pName.."-PbarFlowWrap"][pName.."IPS"][pName.."Label"].caption = tostring(truncateNumber(productIPS[pChildren[i]] * sliderValue, 2)).."/s"
-							local pbarSlider = pbarTraits(productIPS[pChildren[i]] * sliderValue)
+							products[pChildren[i]][pName.."-PbarFlowWrap"][pName.."IPS"][pName.."Label"].caption = tostring(truncateNumber(ProductIPS[player.name][pChildren[i]] * sliderValue, 2)).."/s"
+							local pbarSlider = pbarTraits(ProductIPS[player.name][pChildren[i]] * sliderValue)
 							local belt = products[pChildren[i]][pName.."-inserter-sprite-wrap"]["belt"]
 							local chest = products[pChildren[i]][pName.."-inserter-sprite-wrap"]["chest"]
 							local pbar = products[pChildren[i]][pName.."-PbarFlowWrap"][pName.."pbar"]
@@ -474,7 +495,7 @@ local function playerSlid(event)
 							if productType ~= "fluid" then
 								belt.add{type = "label", name = "belt-label", caption = {'captions.belt'}}
 								chest.add{type = "label", name = "chest-label", caption = {'captions.chest'}}
-								addInserterSprites(belt.parent, pName, pbarSlider.belt, player.force.technologies, truncateNumber(productIPS[pChildren[i]], 2), {'tooltips.to'})
+								addInserterSprites(belt.parent, pName, pbarSlider.belt, player.force.technologies, truncateNumber(ProductIPS[player.name][pChildren[i]], 2), {'tooltips.to'})
 							end			
 							
 							if pbar then
