@@ -160,8 +160,6 @@ local function addInserterSprites(insertSpriteWrap, productName, belt, techs, IP
 	-- START of Product Inserter sprites
 		-- START of Belt limited
 	local beltSpriteParams = inserterSpriteParams(belt, checkStackBonus(techs), IPS)
-	--local prototypeBelt = game.entity_prototypes[belt]
-	--game.print("belts: "..serpent.block{prototypeBelt})
 	local i = 0
 	for k,v in pairs(beltSpriteParams) do --IPS inserter sprites
 		if v.count ~= 0 then 
@@ -378,8 +376,6 @@ local function setupGui(event)
 					ProductIPS[player.name] = {}
 				end
 				
-				
-				
 				for i = 1, #recipe.ingredients do
 					addItemFrame(player, ACTAssemplerFlow["ingredients"], recipe.ingredients[i], seconds, effects, i, sliderValue)
 				end
@@ -438,12 +434,6 @@ local function playerSlid(event)
 					for i = 1, #iChildren do
 						if string.find(iChildren[i], "-ingredientWrap") then
 							local iName = string.sub(iChildren[i], 1, string.find(iChildren[i], "-ingredientWrap") - 1)
-game.print("slider value: "..sliderValue)
-game.print("full child name: "..iChildren[i])
-game.print("clean child name: "..iName)
-if IngredientIPS then
-	game.print("slider: "..serpent.block(IngredientIPS))
-end
 							local productType = "fluid"
 							for i = 1, #recipe.ingredients do
 								if recipe.ingredients[i].name == iName then
