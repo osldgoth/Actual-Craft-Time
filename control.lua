@@ -287,8 +287,10 @@ local function setupGui(event)
 				entity.type == "assembling-machine" or
 				entity.type == "furnace" or
 				entity.type == "rocket-silo" or 
-				entity.type == "lab" or 
-				entity.type == "mining-drill")  then
+				--entity.type == "lab" or 
+				--entity.type == "mining-drill" or
+				"1" == "2" -- evaluates always to false :)
+			      )  then
 				
 			--/c game.print(serpent.block(game.player.selected.prototype.mineable_properties))
 			local playerIndex = event.player_index
