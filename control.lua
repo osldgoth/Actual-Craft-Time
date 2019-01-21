@@ -153,7 +153,6 @@ local function inserterSpriteParams(sourceType, stackBonus, IPS)
 			end
 		end
 		if stop >=12 then
-			--game.print("while-loop force stopped. This should not be - something may have gone wrong! Notify ACT Mod Author") --add log info here?
 			break
 		end
 	end
@@ -222,7 +221,6 @@ local function addItemFrame(player, ACTAssemplerFlowI_PWrap, product, seconds, e
 		else
 			IPS = (product.amount or product.amount_max) / seconds --figure out if this does or does not need productivity bonus
 		end
-		--game.print("ips "..IPS)
 		IngredientIPS[player.name][product.name.."-ingredientWrap"..i] = IPS
 		nameIPS.add{type = "label", name = product.name.."Label", caption = truncateNumber(IPS * sliderValue, 2).."/s", tooltip = {'tooltips.IPS'}}
 		
@@ -246,10 +244,12 @@ local function addItemFrame(player, ACTAssemplerFlowI_PWrap, product, seconds, e
 		local IPS
 		if entity.name == "pumpjack" then
 			IPS = product.extra / seconds
-			--game.print("product.extra")
 		elseif entity.name == "electric-mining-drill" then
 			IPS = ((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds
-		else
+		elseif entity.type == "assembling-machine" or
+				 	 entity.type == "furnace" or
+					 entity.type == "rocket-silo" or 
+					 entity.type == "lab" then
 			IPS = ((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds
 		end
 			
@@ -290,33 +290,33 @@ local function setupGui(event)
 				entity.type == "lab" or 
 				entity.type == "mining-drill")  then
 				
-			--/c game.print(serpent.block(game.player.selected.prototype.mineable_properties))
 			local playerIndex = event.player_index
 			local player = game.players[playerIndex]
 			local recipe
+			
 			if entity.type == "lab" then
 				recipe = player.force.current_research --getTech(player)
-			elseif entity.type == "mining-drill" and entity.name == "pumpjack" then
-				if entity.mining_target then
-					recipe = {name = entity.mining_target.name,
+			elseif entity.type == "mining-drill" then
+				local miningTarget = entity.mining_target
+				if miningTarget then
+					recipe = {name = miningTarget.name,
 										energy = entity.prototype.mining_speed,
-										localised_name = entity.mining_target.localised_name,
-										products = entity.mining_target.prototype.mineable_properties.products,
-										--type = entity.mining_target.prototype.mineable_properties.products[1].type --??
+										localised_name = miningTarget.localised_name,
+										products = miningTarget.prototype.mineable_properties.products,
 										}
-					recipe.products[1].extra = (entity.mining_target.amount / 30000)
+					if miningTarget.prototype.mineable_properties.fluid_amount then
+						recipe.ingredients = {{name = miningTarget.prototype.mineable_properties.required_fluid,
+																	amount = miningTarget.prototype.mineable_properties.fluid_amount/10,
+																	type = "fluid"
+																	}}
+					end
+					if entity.name == "pumpjack" then
+						recipe.products[1].extra = (miningTarget.amount / 30000)
+					end
 				end
-				--game.print(serpent.block(recipe))
-			elseif entity.type == "mining-drill" and entity.name == "electric-mining-drill" then
-				if entity.mining_target then
-					recipe = {name = entity.mining_target.name,
-										energy = entity.prototype.mining_speed,
-										localised_name = entity.mining_target.localised_name,
-										products = entity.mining_target.prototype.mineable_properties.products,
-										--type = entity.mining_target.prototype.mineable_properties.products[1].type --??
-										}
-				end
-			else
+			elseif entity.type == "assembling-machine" or
+						 entity.type == "furnace" or
+						 entity.type == "rocket-silo" then
 				recipe = getRecipe(entity)
 			end
 			
@@ -370,7 +370,9 @@ local function setupGui(event)
 				local craftSpeed 
 				if entity.type == "lab" or entity.type == "mining-drill" then 
 					craftSpeed = entity.prototype.mining_speed or 1
-				else
+				elseif entity.type == "assembling-machine" or
+							 entity.type == "furnace" or
+							 entity.type == "rocket-silo" then
 					craftSpeed = entity.prototype.crafting_speed
 				end
 				local effects = {
@@ -391,10 +393,12 @@ local function setupGui(event)
 				local percent = craftSpeed*effects.speed.bonus
 				local base = 0
 				if entity.type == "lab" then 
-					base = recipe.research_unit_energy / 60
+					base = recipe.research_unit_energy / 60 --ticks to seconds
 				elseif entity.type == "mining-drill" then
 					base = 1 --confirm?
-				else
+				elseif entity.type == "assembling-machine" or
+							 entity.type == "furnace" or
+							 entity.type == "rocket-silo" then
 					base = recipe.energy
 				end
 				
@@ -404,8 +408,10 @@ local function setupGui(event)
 					spritePath = spriteCheck(player, "technology/"..recipe.name)
 				elseif entity.type == "mining-drill" then
 					spritePath = spriteCheck(player, "entity/"..recipe.name)
-				else
-					spritePath = spriteCheck(player, "recipe/"..recipe.name) --is this correct?
+				elseif entity.type == "assembling-machine" or
+							 entity.type == "furnace" or
+							 entity.type == "rocket-silo" then
+					spritePath = spriteCheck(player, "recipe/"..recipe.name)
 				end
 				
 				if simple then
@@ -437,7 +443,7 @@ local function setupGui(event)
 					ProductIPS[player.name] = {}
 				end
 				
-				if entity.name == "lab" then
+				if entity.type == "lab" then
 					ACTAssemplerFlow.add{type = "flow" --[[--]], name = "ingredients", direction = "vertical"}
 ---[[tooltip--]]ACTAssemplerFlow["ingredients"].tooltip = "ingredients"
 					ACTAssemplerFlow["ingredients"].add{type = "label", name = "ingredients_label", caption = {'captions.ingredients'}}
@@ -447,30 +453,43 @@ local function setupGui(event)
 					end
 					
 				elseif entity.type == "mining-drill" then
-					ACTAssemplerFlow.add{type = "flow" --[[--]], name = "products", direction = "vertical"}
----[[tooltip--]]ACTAssemplerFlow["products"].tooltip = "products"
-					ACTAssemplerFlow["products"].add{type = "label", name = "products_label", caption = {'captions.products'}}
-				
-					for i = 1, #recipe.products do
-						addItemFrame(player, ACTAssemplerFlow["products"], recipe.products[i], seconds, effects, i, sliderValue, entity)
+					if recipe.ingredients then
+						ACTAssemplerFlow.add{type = "flow" --[[--]], name = "ingredients", direction = "vertical"}
+---[[tooltip--]]ACTAssemplerFlow["ingredients"].tooltip = "ingredients"
+						ACTAssemplerFlow["ingredients"].add{type = "label", name = "ingredients_label", caption = {'captions.ingredients'}}
+						for i = 1, #recipe.ingredients do
+							addItemFrame(player, ACTAssemplerFlow["ingredients"], recipe.ingredients[i], seconds, effects, i, sliderValue, entity)
+						end
 					end
 					
-				else
+					if recipe.products then
+						ACTAssemplerFlow.add{type = "flow" --[[--]], name = "products", direction = "vertical"}
+---[[tooltip--]]ACTAssemplerFlow["products"].tooltip = "products"
+						ACTAssemplerFlow["products"].add{type = "label", name = "products_label", caption = {'captions.products'}}
+						for i = 1, #recipe.products do
+							addItemFrame(player, ACTAssemplerFlow["products"], recipe.products[i], seconds, effects, i, sliderValue, entity)
+						end
+					end
+				elseif entity.type == "assembling-machine" or
+							 entity.type == "furnace" or
+							 entity.type == "rocket-silo" then
 					ACTAssemplerFlow.add{type = "flow" --[[--]], name = "ingredients", direction = "vertical"}
 ---[[tooltip--]]ACTAssemplerFlow["ingredients"].tooltip = "ingredients"
-				ACTAssemplerFlow["ingredients"].add{type = "label", name = "ingredients_label", caption = {'captions.ingredients'}}
-
+					ACTAssemplerFlow["ingredients"].add{type = "label", name = "ingredients_label", caption = {'captions.ingredients'}}
 				
 					ACTAssemplerFlow.add{type = "flow" --[[--]], name = "products", direction = "vertical"}
 ---[[tooltip--]]ACTAssemplerFlow["products"].tooltip = "products"
 					ACTAssemplerFlow["products"].add{type = "label", name = "products_label", caption = {'captions.products'}}
 				
-					for i = 1, #recipe.ingredients do
-						addItemFrame(player, ACTAssemplerFlow["ingredients"], recipe.ingredients[i], seconds, effects, i, sliderValue, entity)
+					if recipe.ingredients then
+						for i = 1, #recipe.ingredients do
+							addItemFrame(player, ACTAssemplerFlow["ingredients"], recipe.ingredients[i], seconds, effects, i, sliderValue, entity)
+						end
 					end
-					
-					for i = 1, #recipe.products do
-						addItemFrame(player, ACTAssemplerFlow["products"], recipe.products[i], seconds, effects, i, sliderValue, entity)
+					if recipe.products then
+						for i = 1, #recipe.products do
+							addItemFrame(player, ACTAssemplerFlow["products"], recipe.products[i], seconds, effects, i, sliderValue, entity)
+						end
 					end
 					
 					if recipe.name == "rocket-part" then
@@ -509,29 +528,29 @@ local function playerSlid(event)
 		if entity then
 			local recipe
 			
-			if entity.name == "lab" then
+			if entity.type == "lab" then
 				recipe = player.force.current_research --getTech(player)
-			elseif entity.name == "pumpjack" then
-				if entity.mining_target then
-					recipe = {name = entity.mining_target.name,
+			elseif entity.type == "mining-drill" then
+				local miningTarget = entity.mining_target
+				if miningTarget then
+					recipe = {name = miningTarget.name,
 										energy = entity.prototype.mining_speed,
-										localised_name = entity.mining_target.localised_name,
-										products = entity.mining_target.prototype.mineable_properties.products,
-										--type = entity.mining_target.prototype.mineable_properties.products[1].type --??
+										localised_name = miningTarget.localised_name,
+										products = miningTarget.prototype.mineable_properties.products,
 										}
-					recipe.products[1].extra = (entity.mining_target.amount / 30000)
+						if miningTarget.prototype.mineable_properties.fluid_amount then
+							recipe.ingredients = {{name = miningTarget.prototype.mineable_properties.required_fluid,
+														 				 amount = miningTarget.prototype.mineable_properties.fluid_amount/10,
+																		 type = "fluid"
+																		}}
+					end
+					if entity.name == "pumpjack" then
+						recipe.products[1].extra = (miningTarget.amount / 30000)
+					end
 				end
-				--game.print(serpent.block(recipe))
-			elseif entity.name == "electric-mining-drill" then
-				if entity.mining_target then
-					recipe = {name = entity.mining_target.name,
-										energy = entity.prototype.mining_speed,
-										localised_name = entity.mining_target.localised_name,
-										products = entity.mining_target.prototype.mineable_properties.products,
-										--type = entity.mining_target.prototype.mineable_properties.products[1].type --??
-										}
-				end
-			else
+			elseif entity.type == "assembling-machine" or
+						 entity.type == "furnace" or
+						 entity.type == "rocket-silo" then
 				recipe = getRecipe(entity)
 			end
 			
@@ -547,12 +566,21 @@ local function playerSlid(event)
 					local iChildren = {}
 					local pChildren = {}
 					
-					if entity.name == "lab" then
-						iChildren = ingredients.children_names
-					elseif entity.name == "pumpjack" or entity.name == "electric-mining-drill" then
+					if entity.type == "lab" then
+						if ingredients then
+							iChildren = ingredients.children_names
+						end
+					elseif entity.type == "mining-drill" then
+						if ingredients then
+							iChildren = ingredients.children_names
+						end
 						pChildren = products.children_names
-					else
-						iChildren = ingredients.children_names
+					elseif entity.type == "assembling-machine" or
+								 entity.type == "furnace" or
+								 entity.type == "rocket-silo" then
+						if ingredients then
+							iChildren = ingredients.children_names
+						end
 						pChildren = products.children_names
 					end
 					
