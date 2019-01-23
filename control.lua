@@ -31,10 +31,6 @@ local function getRecipe(entity)
 	return entity.get_recipe() or getRecipeFromOutput(entity) or getRecipeFromFurnace(entity)
 end
 
--- local function getTech(player)
-	-- return player.force.current_research
--- end
-
 local function spriteCheck(player, spritePath)
 	if player.gui.is_valid_sprite_path(spritePath) then
 		return spritePath
@@ -218,8 +214,13 @@ local function addItemFrame(player, ACTAssemplerFlowI_PWrap, product, seconds, e
 		local IPS
 		if entity.type == "lab" then
 			IPS = product.amount / seconds
-		else
-			IPS = (product.amount or product.amount_max) / seconds --figure out if this does or does not need productivity bonus
+		elseif entity.name == "electric-mining-drill" or string.find(entity.name, "mining%-drill") then
+			IPS = ((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds
+		elseif entity.type == "assembling-machine" or
+				 	 entity.type == "furnace" or
+					 entity.type == "rocket-silo" or 
+					 entity.type == "lab" then
+			IPS = ((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds
 		end
 		IngredientIPS[player.name][product.name.."-ingredientWrap"..i] = IPS
 		nameIPS.add{type = "label", name = product.name.."Label", caption = truncateNumber(IPS * sliderValue, 2).."/s", tooltip = {'tooltips.IPS'}}
@@ -241,10 +242,10 @@ local function addItemFrame(player, ACTAssemplerFlowI_PWrap, product, seconds, e
 			namePbar.tooltip = pbarInitial.tool
 		end
 	else -- "products"
-		local IPS
+		local IPS = 0
 		if entity.name == "pumpjack" then
 			IPS = product.extra / seconds
-		elseif entity.name == "electric-mining-drill" then
+		elseif entity.name == "electric-mining-drill" or string.find(entity.name, "mining%-drill") then
 			IPS = ((product.amount or product.amount_max) + ((product.amount or product.amount_max) * effects.productivity.bonus)) / seconds
 		elseif entity.type == "assembling-machine" or
 				 	 entity.type == "furnace" or
@@ -295,7 +296,7 @@ local function setupGui(event)
 			local recipe
 			
 			if entity.type == "lab" then
-				recipe = player.force.current_research --getTech(player)
+				recipe = player.force.current_research
 			elseif entity.type == "mining-drill" then
 				local miningTarget = entity.mining_target
 				if miningTarget then
@@ -306,7 +307,7 @@ local function setupGui(event)
 										}
 					if miningTarget.prototype.mineable_properties.fluid_amount then
 						recipe.ingredients = {{name = miningTarget.prototype.mineable_properties.required_fluid,
-																	amount = miningTarget.prototype.mineable_properties.fluid_amount/10,
+																	amount = miningTarget.prototype.mineable_properties.fluid_amount / 10,
 																	type = "fluid"
 																	}}
 					end
@@ -589,8 +590,8 @@ local function playerSlid(event)
 					playersGui["ACT-frame_"..event.player_index]["machineFlow"]["sliderFlow"]["sliderLabel"].caption = {'', sliderValue, " ", entity.localised_name}
 					
 					for i = 1, #iChildren do
-						if string.find(iChildren[i], "-ingredientWrap") then
-							local iName = string.sub(iChildren[i], 1, string.find(iChildren[i], "-ingredientWrap") - 1)
+						if string.find(iChildren[i], "%-ingredientWrap") then
+							local iName = string.sub(iChildren[i], 1, string.find(iChildren[i], "%-ingredientWrap") - 1)
 							local productType = "fluid"
 							if entity.type ~= "lab" then
 								for i = 1, #recipe.ingredients do
@@ -630,8 +631,8 @@ local function playerSlid(event)
 					end
 
 					for i = 1, #pChildren do
-						if string.find(pChildren[i], "-ingredientWrap") then
-							local pName = string.sub(pChildren[i], 1, string.find(pChildren[i], "-ingredientWrap") - 1)
+						if string.find(pChildren[i], "%-ingredientWrap") then
+							local pName = string.sub(pChildren[i], 1, string.find(pChildren[i], "%-ingredientWrap") - 1)
 							local productType = "fluid"
 							for i = 1, #recipe.products do
 								if recipe.products[i].name == pName then
