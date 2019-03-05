@@ -19,7 +19,7 @@ default_style.ACT_inserter = {
         filename = "__core__/graphics/gui.png",
         priority = "extra-high-no-scale",
         load_in_minimal_mode = true,
-        corner_size = {0, 0},
+        corner_size = {1, 1},
         position = {0, 0}
       },
   hovered_graphical_set = {
@@ -27,7 +27,7 @@ default_style.ACT_inserter = {
         filename = "__core__/graphics/gui.png",
         priority = "extra-high-no-scale",
         load_in_minimal_mode = true,
-        corner_size = {0, 0},
+        corner_size = {1, 1},
         position = {0, 0}
       },
   clicked_graphical_set = {
@@ -35,7 +35,7 @@ default_style.ACT_inserter = {
         filename = "__core__/graphics/gui.png",
         priority = "extra-high-no-scale",
         load_in_minimal_mode = true,
-        corner_size = {0, 0},
+        corner_size = {1, 1},
         position = {0, 0}
       }
 }
