@@ -1,0 +1,140 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.4.1
+Date: 10/09/2019
+  Changes:
+    - rewrote control.lua for easier reading and bug fixing.
+    - Dropped inserter count.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.9
+Date: 
+  Bugfixes:
+    - fixed nil settings crash.
+    - removed some non used code.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.8
+Date: 
+  Minor Features:
+    - added settings.
+    - added slider buttons.
+    - added show/hide inserters checkbox.
+    - added functionality for slider butons and inserters checkbox.
+    - changed background of inserter sprites.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.7
+Date: 
+  Bugfixes:
+    - fixed missing player for labs.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.6
+Date: 
+  Bugfixes:
+    - fixed "belt-speed" errors, safer get recipe, fixed miniloader error, fixed broken sliders on mining drills.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.5
+Date: 
+  Bugfixes:
+    - fixed module inserter mod error, fixed some PY mod miners - sliders for some are broken.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.4
+Date: 
+  Changes:
+    - supports most non vanilla belts, game 0.17.x update, added changelog and thumbnail.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.3
+Date: 
+  Bugfixes:
+    - final fixes for compatibility with mods.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.2
+Date: 
+  Bugfixes:
+    - fixed IPS and entity bugs for mods.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.1
+Date: 
+  Bugfixes:
+    - fixed mining drill bugs.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: 
+  Bugfixes:
+    - added code for labs, mining drills, and pumpjacks.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.9
+Date: 
+  Bugfixes:
+    - Fixed a bug where multiple players could overwrite the IPS table causing crashes for other players.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.8
+Date: 
+  Bugfixes:
+    - Corrected error.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.7
+Date: 
+  Bugfixes:
+    - Fixed crash when a recipe has more than one ingredient or product of the same name.
+    - Fixed crash when entity was mined, destroyed or otherwise lost.
+  Minor Features:
+    - Added feature: automatic saving and restore of slider position.
+    - Mod should be localization friendly.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.6
+Date: 
+  Bugfixes:
+    - Changed while loop to exit quietly.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.5
+Date: 
+  Changes:
+    - Added labels for inserter sprites.
+    - Modified tooltip strings for clarity.
+  Bugfixes:
+    - Fixed bug in rare case where there is no recipe when slider is used.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.4
+Date: 
+  Minor Features:
+    - Added inserter estimations for Belt and Chest.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.3
+Date: 
+  Bugfixes:
+    - Fixed bug where Items/second was rounded incorrectly causing low accuracy for fast machines.
+  Minor Features:
+    - Added a slider and progressbar features.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.2
+Date: 
+  Bugfixes:
+    - Gui bug fix for rare case when Gui closed when assembly machine is changed and for deep core mining mod.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.2.1
+Date: 
+  Major Features:
+    - Finished Gui, Items per second, added ingredients, fixed bugs.
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 
+  Major Features:
+    - Initial release, most code has been completed, code logic seems to be in order. not 100% sure items per second is correct with module use.

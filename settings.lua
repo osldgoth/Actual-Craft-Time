@@ -18,5 +18,13 @@ data:extend({
 		setting_type = "runtime-per-user",
 		minimum_value = 25,
 		default_value = 200
+	},
+	{
+		type = "int-setting",
+		name = "ACT-slider-sensitivity",
+		setting_type = "runtime-per-user",
+		minimum_value = 1,
+		default_value = 5,
+		maximum_value = 10
 	}
 })
