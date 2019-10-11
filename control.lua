@@ -357,9 +357,37 @@ local function guiVisibleAttrDescend(currentGuiSection, bool)
 	end
 end
 
+local function settings(player)
+	if not global.settings then
+		global.settings = {}
+	end
+	if not global.settings[player.name] then
+		global.settings[player.name] = {
+			["gui-location"] = player.mod_settings["ACT-Gui-Location"].value,
+			["simple-text"] = player.mod_settings["ACT-simple-text"].value,
+			["max-slider-value"] = player.mod_settings["ACT-max-slider-value"].value,
+			["sensitivity-value"] = player.mod_settings["ACT-slider-sensitivity"].value,
+		}
+	else --check for changes
+		if global.settings[player.name]["gui-location"] ~= player.mod_settings["ACT-Gui-Location"].value then
+			global.settings[player.name]["gui-location"] = player.mod_settings["ACT-Gui-Location"].value
+		end
+		if global.settings[player.name]["simple-text"] ~= player.mod_settings["ACT-simple-text"].value then
+			global.settings[player.name]["simple-text"] = player.mod_settings["ACT-simple-text"].value
+		end
+		if global.settings[player.name]["max-slider-value"] ~= player.mod_settings["ACT-max-slider-value"].value then
+			global.settings[player.name]["max-slider-value"] = player.mod_settings["ACT-max-slider-value"].value
+		end	
+		if global.settings[player.name]["sensitivity-value"] ~= player.mod_settings["ACT-slider-sensitivity"].value then
+			global.settings[player.name]["sensitivity-value"] = player.mod_settings["ACT-slider-sensitivity"].value
+		end
+	end
+end
+
 local function closeGui(event)
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]
+	settings(player)
 	local guiLocation = global.settings[player.name]["gui-location"]
 	local playersGui = player.gui[guiLocation]
 	guiVisibleAttrDescend(playersGui["ACT_frame_"..playersGui.player_index], false)
@@ -432,33 +460,6 @@ local function desiredEntity(entity)
 		return true
 	else
 		return false
-	end
-end
-
-local function settings(player)
-	if not global.settings then
-		global.settings = {}
-	end
-	if not global.settings[player.name] then
-		global.settings[player.name] = {
-			["gui-location"] = player.mod_settings["ACT-Gui-Location"].value,
-			["simple-text"] = player.mod_settings["ACT-simple-text"].value,
-			["max-slider-value"] = player.mod_settings["ACT-max-slider-value"].value,
-			["sensitivity-value"] = player.mod_settings["ACT-slider-sensitivity"].value,
-		}
-	else --check for changes
-		if global.settings[player.name]["gui-location"] ~= player.mod_settings["ACT-Gui-Location"].value then
-			global.settings[player.name]["gui-location"] = player.mod_settings["ACT-Gui-Location"].value
-		end
-		if global.settings[player.name]["simple-text"] ~= player.mod_settings["ACT-simple-text"].value then
-			global.settings[player.name]["simple-text"] = player.mod_settings["ACT-simple-text"].value
-		end
-		if global.settings[player.name]["max-slider-value"] ~= player.mod_settings["ACT-max-slider-value"].value then
-			global.settings[player.name]["max-slider-value"] = player.mod_settings["ACT-max-slider-value"].value
-		end	
-		if global.settings[player.name]["sensitivity-value"] ~= player.mod_settings["ACT-slider-sensitivity"].value then
-			global.settings[player.name]["sensitivity-value"] = player.mod_settings["ACT-slider-sensitivity"].value
-		end
 	end
 end
 
