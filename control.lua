@@ -306,6 +306,7 @@ end
 
 local function addNextInfoWrap(parent_section, i)
 	local player = game.players[parent_section.player_index]
+	if not player then return end
 	parent_section.add{type = "flow"--[[X--]], name = "infoWrap"..i, direction = "horizontal", visible = false --[[*--]]}
 		local parent_section_infoWrap = parent_section["infoWrap"..i]
 		parent_section_infoWrap.add{type = "flow"--[[X--]], name = "itemBeltBarWrap", direction = "vertical", visible = false --[[*--]]}
@@ -347,8 +348,9 @@ local function guiVisibleAttrDescend(currentGuiSection, bool)
 	if currentGuiSection == nil or not next(currentGuiSection) then --invalid or an enpty table
 		return
 	end
-	
-	if currentGuiSection.parent and currentGuiSection.parent.visible ~= bool and currentGuiSection.parent.name ~= "ACT_frame_"..currentGuiSection.player_index then
+	local player = game.players[currentGuiSection.player_index]
+	if not player then return end
+	if currentGuiSection.parent and currentGuiSection.parent.visible ~= bool and not(currentGuiSection.parent.name == global.settings[player.name]["gui-location"]) and  currentGuiSection.parent.name ~= "ACT_frame_"..currentGuiSection.player_index then
 		guiVisibleAttrAscend(currentGuiSection.parent, bool)
 	end
 	currentGuiSection.visible = bool
@@ -358,6 +360,7 @@ local function guiVisibleAttrDescend(currentGuiSection, bool)
 end
 
 local function settings(player)
+	if not player then return end
 	if not global.settings then
 		global.settings = {}
 	end
@@ -387,6 +390,7 @@ end
 local function closeGui(event)
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]
+	if not player then return end
 	settings(player)
 	local guiLocation = global.settings[player.name]["gui-location"]
 	local playersGui = player.gui[guiLocation]
@@ -400,6 +404,7 @@ end
 
 local function updateItem(recipe, items, current_section)
 	local player = current_section.gui.player
+	if not player then return end
 	if not items then return end
 	for k,v in pairs(items) do
 		if not current_section["infoWrap"..k] then
@@ -525,6 +530,7 @@ local function run(event)
 	
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]
+	if not player then return end
 	settings(player)
 	local guiLocation = global.settings[player.name]["gui-location"]
 	local playersGui = player.gui[guiLocation] --top or left	
@@ -569,6 +575,7 @@ local function changeGuiSliderButtons(event)
 	
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]
+	if not player then return end
 	local elementName = event.element.name
 	
 	local guiLocation = global.settings[player.name]["gui-location"]
@@ -637,6 +644,7 @@ local function playerSlid(event)
 	if not desiredGuiNameSlider(event) then return end
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]
+	if not player then return end
 	local entity = player.opened
 	if not entity then return end
 	
@@ -657,6 +665,7 @@ local function playerClickedGui(event)
 	if not (event.element.type == "sprite-button") then return end
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]
+	if not player then return end
 	local elementName = event.element.name
 	if elementName == "recipeSprite" then
 		resetACT(event)
