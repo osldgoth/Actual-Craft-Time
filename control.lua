@@ -552,7 +552,7 @@ local function run(event)
 	
 	globalSliderStorage(player.name, recipe.name)
 
-	updateRecipe(assembler_group.recipeSection, {'tooltips.reset', recipe.name}, {'captions.seconds', truncateNumber(recipe.seconds, 2)}, spriteCheck(player, recipe.name))
+	updateRecipe(assembler_group.recipeSection, {'tooltips.reset', recipe.localised_name}, {'captions.seconds', truncateNumber(recipe.seconds, 2)}, spriteCheck(player, recipe.name))
 	
 	updateItem(recipe, recipe.ingredients, assembler_group.ingredientsSection)
 
@@ -661,7 +661,7 @@ local function playerSlid(event)
 	end
 end
 
-local function playerClickedGui(event)		
+local function playerClickedGui(event)
 	if not (event.element.type == "sprite-button") then return end
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]

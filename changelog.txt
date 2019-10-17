@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.4
+Date: 10/15/2019
+  Bugfixes:
+    - Fixed that the tooltip for sprite-button on Gui contained the name of the recipe but should have been the localized name of the recipe instead.
+		
+---------------------------------------------------------------------------------------------------
 Version: 0.4.3
 Date: 10/15/2019
   Bugfixes:
