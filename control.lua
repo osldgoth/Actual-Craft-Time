@@ -126,20 +126,37 @@ local function expandProducts(products, sec, playerName, effects, recipeName)
 	local playerForce = game.players[playerName].force
 	for k,product in pairs(products) do
 		local amount = product.amount or product.max_amount or 1
-		local IPS = (amount * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec
+		local IPS = (amount * (effects.productivity.bonus + 1)) / sec
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
 		productTable[k].ips = IPS
 		productTable[k].pbar = pbarTraits(IPS * global.ACT_slider[playerName][recipeName].value, playerName)
 	end
 	if recipeName == "rocket-part" then
-		local IPS = (10 * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec
+		local IPS = (10 * (effects.productivity.bonus + 1)) / sec
 		productTable[#products+1] = {amount = 10,
 																 name = "space-science-pack",
 																 type = "item",
 																 localised_name = getLocalisedName("space-science-pack"),
 																 ips = IPS,
 																 pbar = pbarTraits(IPS * global.ACT_slider[playerName][recipeName].value, playerName)}
+	end
+	return productTable
+end
+
+local function expandProductsMines(products, sec, playerName, effects, recipeName)
+	if not playerName then
+		return {} --hopefully this never happens
+	end
+	local productTable = {}
+	local playerForce = game.players[playerName].force
+	for k,product in pairs(products) do
+		local amount = product.amount or product.max_amount or 1
+		local IPS = (amount * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec
+		productTable[k] = product
+		productTable[k].localised_name = getLocalisedName(product.name)
+		productTable[k].ips = IPS
+		productTable[k].pbar = pbarTraits(IPS * global.ACT_slider[playerName][recipeName].value, playerName)
 	end
 	return productTable
 end
@@ -248,7 +265,7 @@ local function getRecipeFromMiningTarget(entity, playerName)
 			local sec = miningTarget.prototype.mineable_properties.mining_time / (entity.prototype.mining_speed * (effects.speed.bonus + 1))
 			local recipe = {name = miningTarget.name,
 											localised_name = miningTarget.localised_name,
-											products = expandProducts(miningTarget.prototype.mineable_properties.products, sec, playerName, effects, miningTarget.name),
+											products = expandProductsMines(miningTarget.prototype.mineable_properties.products, sec, playerName, effects, miningTarget.name),
 											seconds = sec,
 											effects = effects
 											}
