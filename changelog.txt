@@ -1,8 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.6
+Date: 01/21/2020
+  Changes:
+    - Game Version 0.18.x Update.
+---------------------------------------------------------------------------------------------------
 Version: 0.4.5
 Date: 10/28/2019
   Bugfixes:
-    - Fixed mining productivity bonus being applied to non-mining entities
+    - Fixed mining productivity bonus being applied to non-mining entities.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.4
