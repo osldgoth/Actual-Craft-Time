@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.7
+Date: 04/16/2020
+  Minor Features:
+    - Added	ability to toggle between items per second and items per minute.
+---------------------------------------------------------------------------------------------------
 Version: 0.4.6
 Date: 01/21/2020
   Changes:
@@ -31,73 +36,73 @@ Date: 10/10/2019
 Version: 0.4.1
 Date: 10/09/2019
   Changes:
-    - rewrote control.lua for easier reading and bug fixing.
+    - Rewrote control.lua for easier reading and bug fixing.
     - Dropped inserter count.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.9
 Date: 
   Bugfixes:
-    - fixed nil settings crash.
-    - removed some non used code.
+    - Fixed nil settings crash.
+    - Removed some non used code.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.8
 Date: 
   Minor Features:
-    - added settings.
-    - added slider buttons.
-    - added show/hide inserters checkbox.
-    - added functionality for slider butons and inserters checkbox.
-    - changed background of inserter sprites.
+    - Added settings.
+    - Added slider buttons.
+    - Added show/hide inserters checkbox.
+    - Added functionality for slider butons and inserters checkbox.
+    - Changed background of inserter sprites.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.7
 Date: 
   Bugfixes:
-    - fixed missing player for labs.
+    - Fixed missing player for labs.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.6
 Date: 
   Bugfixes:
-    - fixed "belt-speed" errors, safer get recipe, fixed miniloader error, fixed broken sliders on mining drills.
+    - Fixed "belt-speed" errors, safer get recipe, fixed miniloader error, fixed broken sliders on mining drills.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.5
 Date: 
   Bugfixes:
-    - fixed module inserter mod error, fixed some PY mod miners - sliders for some are broken.
+    - Fixed module inserter mod error, fixed some PY mod miners - sliders for some are broken.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.4
 Date: 
   Changes:
-    - supports most non vanilla belts, game 0.17.x update, added changelog and thumbnail.
+    - Supports most non vanilla belts, game 0.17.x update, added changelog and thumbnail.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.3
 Date: 
   Bugfixes:
-    - final fixes for compatibility with mods.
+    - Final fixes for compatibility with mods.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: 
   Bugfixes:
-    - fixed IPS and entity bugs for mods.
+    - Fixed IPS and entity bugs for mods.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 
   Bugfixes:
-    - fixed mining drill bugs.
+    - Fixed mining drill bugs.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 
   Bugfixes:
-    - added code for labs, mining drills, and pumpjacks.
+    - Added code for labs, mining drills, and pumpjacks.
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.9

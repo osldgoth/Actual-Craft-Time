@@ -324,13 +324,12 @@ end
 local function addNextInfoWrap(parent_section, i)
 	local player = game.players[parent_section.player_index]
 	if not player then return end
-	parent_section.add{type = "flow"--[[X--]], name = "infoWrap"..i, direction = "horizontal", visible = false --[[*--]]}
+	parent_section.add{type = "flow"--[[X--]], name = "infoWrap"..i, direction = "vertical", visible = false --[[*--]]}
 		local parent_section_infoWrap = parent_section["infoWrap"..i]
-		parent_section_infoWrap.add{type = "flow"--[[X--]], name = "itemBeltBarWrap", direction = "vertical", visible = false --[[*--]]}
-			parent_section_infoWrap.itemBeltBarWrap.add{type = "flow"--[[X--]], name = "itemIPSWrap", visible = false --[[*--]]}
-				parent_section_infoWrap.itemBeltBarWrap.itemIPSWrap.add{type = "sprite-button", name = "item_sprite", tooltip = "", visible = false --[[*--]], style = ACT_buttons}
-				parent_section_infoWrap.itemBeltBarWrap.itemIPSWrap.add{type = "label", name = "IPSLabel", tooltip = "", caption = "", visible = false --[[*--]]}
-			parent_section_infoWrap.itemBeltBarWrap.add{type = "progressbar", name = "item_Bar", tooltip = "", visible = false --[[*--]] }
+			parent_section_infoWrap.add{type = "flow"--[[X--]], name = "itemIPSWrap", visible = false --[[*--]]}
+				parent_section_infoWrap.itemIPSWrap.add{type = "sprite-button", name = "item_sprite", tooltip = "", visible = false --[[*--]], style = ACT_buttons}
+				parent_section_infoWrap.itemIPSWrap.add{type = "label", name = "IPSLabel", tooltip = "", caption = "", visible = false --[[*--]]}
+			parent_section_infoWrap.add{type = "progressbar", name = "item_Bar", tooltip = "", visible = false --[[*--]] }
 end
 
 local function guiDescendFind(currentGuiSection, tooltip, message, spritePath)
@@ -347,30 +346,27 @@ local function guiDescendFind(currentGuiSection, tooltip, message, spritePath)
 end
 
 local function guiVisibleAttrAscend(currentGuiSection, bool)
-	if currentGuiSection == nil then --top level gui element or other ("top" or "left" (or "center"))
-		return
-	end
-	if currentGuiSection.visible == bool then --currentGuiSection is already true/false (assume parent is as well if a parent?)
-		return
-	end
+--top level gui element or other ("top" or "left" (or "center"))
+	if currentGuiSection == nil then return	end
+	--currentGuiSection is already true/false (assume parent is as well if a parent?)
+	if currentGuiSection.visible == bool then return end
 	
 	currentGuiSection.visible = bool
-	if not currentGuiSection.parent then
-		return
-	end
+	
+	if not currentGuiSection.parent then return	end
 	guiVisibleAttrAscend(currentGuiSection.parent, bool)
 end
 
 local function guiVisibleAttrDescend(currentGuiSection, bool)
-	if currentGuiSection == nil or not next(currentGuiSection) then --invalid or an enpty table
-		return
-	end
+	if currentGuiSection == nil or not next(currentGuiSection) then return end --invalid or an enpty table
+	
 	local player = game.players[currentGuiSection.player_index]
 	if not player then return end
 	if currentGuiSection.parent and currentGuiSection.parent.visible ~= bool and not(currentGuiSection.parent.name == global.settings[player.name]["gui-location"]) and  currentGuiSection.parent.name ~= "ACT_frame_"..currentGuiSection.player_index then
 		guiVisibleAttrAscend(currentGuiSection.parent, bool)
 	end
 	currentGuiSection.visible = bool
+	
 	for _,v in pairs(currentGuiSection.children) do
 		guiVisibleAttrDescend(v, bool)
 	end
@@ -414,12 +410,16 @@ local function closeGui(event)
 	guiVisibleAttrDescend(playersGui["ACT_frame_"..playersGui.player_index], false)
 end
 
+local function updateRadio(currentGuiSection)
+	guiVisibleAttrDescend(currentGuiSection, true)
+end
+
 local function updateRecipe(currentGuiSection, tooltip, message, spritePath)
 	guiVisibleAttrDescend(currentGuiSection, true)
 	guiDescendFind(currentGuiSection, tooltip, message, spritePath)
 end
 
-local function updateItem(recipe, items, current_section)
+local function updateItem(recipe, items, current_section, minOrSec)
 	local player = current_section.gui.player
 	if not player then return end
 	if not items then return end
@@ -432,21 +432,21 @@ local function updateItem(recipe, items, current_section)
 		local guiElementInfoWrap_K = current_section["infoWrap"..k]
 		
 		guiElementInfoWrap_K.visible = true
-		guiElementInfoWrap_K.itemBeltBarWrap.visible = true
-		guiElementInfoWrap_K.itemBeltBarWrap.itemIPSWrap.visible = true
-		guiElementInfoWrap_K.itemBeltBarWrap.itemIPSWrap.item_sprite.visible = true
-		guiElementInfoWrap_K.itemBeltBarWrap.itemIPSWrap.item_sprite.sprite = spriteCheck(player, v.name) --additions/changes
+		guiElementInfoWrap_K.visible = true
+		guiElementInfoWrap_K.itemIPSWrap.visible = true
+		guiElementInfoWrap_K.itemIPSWrap.item_sprite.visible = true
+		guiElementInfoWrap_K.itemIPSWrap.item_sprite.sprite = spriteCheck(player, v.name) --additions/changes
 		
-		guiElementInfoWrap_K.itemBeltBarWrap.itemIPSWrap.item_sprite.tooltip = v.localised_name or v.name
-		guiElementInfoWrap_K.itemBeltBarWrap.itemIPSWrap.IPSLabel.caption = truncateNumber(v.ips * global.ACT_slider[player.name][recipe.name].value, 2).."/s"
+		guiElementInfoWrap_K.itemIPSWrap.item_sprite.tooltip = v.localised_name or v.name 
+		guiElementInfoWrap_K.itemIPSWrap.IPSLabel.caption = {'', truncateNumber(v.ips * global.ACT_slider[player.name][recipe.name].value * minOrSec.value, 2), minOrSec.time}
 
 		if v.type ~= "fluid" then
-			guiElementInfoWrap_K.itemBeltBarWrap.item_Bar.visible = true
-			guiElementInfoWrap_K.itemBeltBarWrap.item_Bar.tooltip = v.pbar.tool
-			guiElementInfoWrap_K.itemBeltBarWrap.item_Bar.style.color = v.pbar.color
-			guiElementInfoWrap_K.itemBeltBarWrap.item_Bar.value = v.pbar.value
+			guiElementInfoWrap_K.item_Bar.visible = true
+			guiElementInfoWrap_K.item_Bar.tooltip = v.pbar.tool
+			guiElementInfoWrap_K.item_Bar.style.color = v.pbar.color
+			guiElementInfoWrap_K.item_Bar.value = v.pbar.value
 		end
-		guiElementInfoWrap_K.itemBeltBarWrap.itemIPSWrap.IPSLabel.visible = true		
+		guiElementInfoWrap_K.itemIPSWrap.IPSLabel.visible = true		
 	end
 end
 
@@ -485,6 +485,22 @@ local function desiredEntity(entity)
 	end
 end
 
+local function toggleRadio(element)	
+	for k,v in pairs(element.parent.children_names) do
+		if v ~= element.name then
+			element.parent.children[k].state = not element.parent.children[k].state
+		end
+	end
+end
+
+local function determineMinOrSec(time_second)
+	if time_second.state then 
+		return {value = 1, time = {'captions.perSec'}, captions = 'captions.seconds'} 
+	else 
+		return {value = 60, time = {'captions.perMin'}, captions = 'captions.minutes'} 
+	end
+end
+
 local function setupGui(player, playersGui)
 -- outside container
 	playersGui.add{type = "frame", name = "ACT_frame_"..playersGui.player_index, direction = "vertical", visible = true --[[**--]]}
@@ -492,17 +508,31 @@ local function setupGui(player, playersGui)
 	--add assemblerGroup
 	playersGui["ACT_frame_"..playersGui.player_index].add{type = "flow"--[[X--]], name = "assemblerGroup", direction = "horizontal", visible = false --[[*--]]}
 	local assembler_group = playersGui["ACT_frame_"..playersGui.player_index].assemblerGroup
-	
+
 	--"main" recipe section
-	assembler_group.add{type = "flow"--[[X--]], name = "recipeSection", direction = "vertical",  visible = false --[[*--]]}
-	local recipe_section = assembler_group.recipeSection
+	assembler_group.add{type = "flow"--[[X--]], name = "recipeRadioWrap", direction = "vertical",  visible = false --[[*--]]}
+	assembler_group.recipeRadioWrap.add{type = "flow"--[[X--]], name = "recipeSection", direction = "vertical",  visible = false --[[*--]]}
+	local recipe_section = assembler_group.recipeRadioWrap.recipeSection
 	
 	recipe_section.add{type = "label", name = "recipeLabel", caption = "Recipe", visible = false --[[*--]]}
 	recipe_section.add{type = "flow"--[[X--]], name ="recipe", direction = "horizontal", visible = false --[[*--]]}
 	recipe_section.recipe.add{type = "sprite-button", name = "recipeSprite", tooltip = "", sprite = "", visible = false --[[*--]]}
-	recipe_section.recipe.add{type = "label", name = "recipeCraftTime", caption = 'craft time', visible = false --[[*--]]}
+	recipe_section.recipe.add{type = "label", name = "recipeCraftTime", caption = 'craft time', visible = false --[[*--]]}	
 	
-	-- if no recipe, all below is not visible ***
+	-- if no recipe, all below is(should) not visible ***
+	
+	--add radio
+	assembler_group.recipeRadioWrap.add{type = "flow", name = "radioSection", direction = "horizontal", visible = false}
+	local radio_section = assembler_group.recipeRadioWrap.radioSection
+	radio_section.add{type = "flow", name = "radioLables", direction = "vertical", visible = false}
+	radio_section.add{type = "flow", name = "radioButtons", direction = "vertical", visible = false, style = 
+	"ACT_vertical_flow"}
+	
+	radio_section.radioLables.add{type = "label", name = "labelTimeSecond", caption = "Seconds", tooltip = {'controls.ACT_IPS_IPM', 'seconds'}, visible = false}
+	radio_section.radioButtons.add{type = "radiobutton", name = "timeSecond", tooltip = {'controls.ACT_IPS_IPM', 'seconds'}, state = true, visible = false}
+	
+	radio_section.radioLables.add{type = "label", name = "labelTimeMinute", caption = "Minutes", tooltip = {'controls.ACT_IPS_IPM', 'minutes'}, visible = false}
+	radio_section.radioButtons.add{type = "radiobutton", name = "timeMinute", tooltip = {'controls.ACT_IPS_IPM', 'minutes'}, state = false, visible = false}
 	
 	--add ingredients
 	assembler_group.add{type = "flow"--[[X--]], name = "ingredientsSection", direction = "vertical", visible = false --[[*--]]}
@@ -535,15 +565,12 @@ local function setupGui(player, playersGui)
 end
 
 local function run(event)
-	if not desiredGuiTypeEntity(event) then --event.gui_type == defines.gui_type.entity
-		return
-	end
+	--event.gui_type == defines.gui_type.entity
+	if not desiredGuiTypeEntity(event) then return end
 	
 	local entity = event.entity
 	
-	if not desiredEntity(entity) then 
-		return
-	end
+	if not desiredEntity(entity) then return end
 	
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]
@@ -552,28 +579,31 @@ local function run(event)
 	local guiLocation = global.settings[player.name]["gui-location"]
 	local playersGui = player.gui[guiLocation] --top or left	
 	
-	if not playersGui["ACT_frame_"..playerIndex] then
+	if not playersGui["ACT_frame_"..playerIndex] then --BUG*******
 		setupGui(player, playersGui)
 	end
 	
 	guiVisibleAttrDescend(playersGui["ACT_frame_"..playersGui.player_index], false)
-	
 	findPrototypeData(player.name)
 	
 	local recipe = getRecipe(entity, player.name)
 	local assembler_group = playersGui["ACT_frame_"..playersGui.player_index].assemblerGroup
 	if not recipe then	--update gui and return
-		updateRecipe(assembler_group.recipeSection, {'tooltips.reset', entity.localised_name}, {'captions.no-recipe'}, spriteCheck(player, entity.name))
-		return
+		updateRecipe(assembler_group.recipeRadioWrap.recipeSection, {'tooltips.reset', entity.localised_name}, {'captions.no-recipe'}, spriteCheck(player, entity.name))
+		return 
 	end
 	
 	globalSliderStorage(player.name, recipe.name)
 
-	updateRecipe(assembler_group.recipeSection, {'tooltips.reset', recipe.localised_name}, {'captions.seconds', truncateNumber(recipe.seconds, 2)}, spriteCheck(player, recipe.name))
-	
-	updateItem(recipe, recipe.ingredients, assembler_group.ingredientsSection)
+	local minOrSec = determineMinOrSec(assembler_group.recipeRadioWrap.radioSection.radioButtons.timeSecond)
 
-	updateItem(recipe, recipe.products, assembler_group.productsSection)
+	updateRecipe(assembler_group.recipeRadioWrap.recipeSection, {'tooltips.reset', recipe.localised_name}, {minOrSec.captions, truncateNumber(recipe.seconds / minOrSec.value, 2)}, spriteCheck(player, recipe.name)) 
+	
+	updateRadio(assembler_group.recipeRadioWrap.radioSection)
+	
+	updateItem(recipe, recipe.ingredients, assembler_group.ingredientsSection, minOrSec)
+
+	updateItem(recipe, recipe.products, assembler_group.productsSection, minOrSec)
 
 	local machine_group = playersGui["ACT_frame_"..playersGui.player_index].machineGroup
 	updateMachine(machine_group, truncateNumber(global.ACT_slider[player.name][recipe.name].value, 0), entity)
@@ -647,6 +677,7 @@ local function changeGuiSliderButtons(event)
 			global.ACT_slider[player.name][recipe.name].value = global.ACT_slider[player.name][recipe.name].value + 5
 		end
 	end
+	
 	if global.ACT_slider[player.name][recipe.name].value < 1 then
 		global.ACT_slider[player.name][recipe.name].value = 1
 	elseif global.ACT_slider[player.name][recipe.name].value > global.settings[player.name]["max-slider-value"] then
@@ -679,7 +710,9 @@ local function playerSlid(event)
 end
 
 local function playerClickedGui(event)
-	if not (event.element.type == "sprite-button") then return end
+	if not (event.element.type == "sprite-button") then return end --restrict what is "clickable" to sprite-buttons. 
+	--radiobuttons handled in on_gui_checked_state_changed, radiobutton()
+	--slider is handled in on_gui_value_changed, playerSlid()
 	local playerIndex = event.player_index
 	local player = game.players[playerIndex]
 	if not player then return end
@@ -689,8 +722,68 @@ local function playerClickedGui(event)
 		return
 	end
 	if elementName:find("ACT%-sliderButton") then
-	changeGuiSliderButtons(event)
-	return
+		changeGuiSliderButtons(event)
+		return
+	end
+end
+
+local function radiobutton(event)
+	if event.input_name == "ACT_IPS_IPM" then
+		for k,v in pairs(event.element.children_names) do
+			if event.element[v].state == true then
+				event.element[v].state = not event.element[v].state
+				event.element = event.element[v]
+				break
+			end
+		end
+	end
+	if event.element.name:find("time") then
+		toggleRadio(event.element)
+		local playerIndex = event.player_index
+		local player = game.players[playerIndex]
+		if not player then return end
+		
+		event.entity = player.opened
+		event.gui_type = defines.gui_type.entity
+
+		run(event)
+	end
+end
+
+local function customInputForRadioButton(event)
+	local playerIndex = event.player_index
+	local player = game.players[playerIndex]
+	if not player then return end
+	settings(player)
+	local guiLocation = global.settings[player.name]["gui-location"]
+	local playersGui = player.gui[guiLocation] --top or left	
+	if not playersGui["ACT_frame_"..playerIndex] then
+		setupGui(player, playersGui)
+	end
+	
+	event.element = playersGui["ACT_frame_"..event.player_index].assemblerGroup.recipeRadioWrap.radioSection.radioButtons
+	radiobutton(event)
+end
+
+local function modChange(event)
+	if event.mod_changes == nil then return end
+	if event.mod_changes.Actual_Craft_Time == nil then return end
+	
+	local previousOldModVersion = event.mod_changes.Actual_Craft_Time.old_version
+	local currentNewModVersion = event.mod_changes.Actual_Craft_Time.new_version
+	
+	if previousOldModVersion == nil then return end --mod was installed previously
+	if currentNewModVersion == nil then return end --mod removed ¯\_(ツ)_/¯
+	
+	if tostring(tostring(previousOldModVersion) <= tostring(currentNewModVersion)) then
+		-- mod was updated, check for gui and delete
+		for playerIndex,player in pairs(game.players) do
+			for _,guiLocation in pairs(player.gui.children) do
+				if guiLocation["ACT_frame_"..playerIndex] then
+					guiLocation["ACT_frame_"..playerIndex].destroy()
+				end
+			end
+		end
 	end
 end
 
@@ -701,3 +794,9 @@ script.on_event(defines.events.on_gui_closed, closeGui)
 script.on_event(defines.events.on_gui_click, playerClickedGui)
 
 script.on_event(defines.events.on_gui_value_changed, playerSlid)
+
+script.on_event(defines.events.on_gui_checked_state_changed, radiobutton)
+
+script.on_event("ACT_IPS_IPM", customInputForRadioButton)
+
+script.on_configuration_changed(modChange)
