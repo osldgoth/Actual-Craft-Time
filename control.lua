@@ -8,6 +8,11 @@ local function truncateNumber(nu, digit)
 	return nu
 end
 
+local function amountMaxMinAverage(product)
+	if not product.amount_max or not product.amount_min then return nil end
+	return (product.amount_max + product.amount_min) / 2
+end
+
 local function getLocalisedName(name)
 	if game.recipe_prototypes[name] then
 		return game.recipe_prototypes[name].localised_name
@@ -119,13 +124,11 @@ local function expandIngredients(ingredients, sec, playerName, recipeName)
 end
 
 local function expandProducts(products, sec, playerName, effects, recipeName)
-	if not playerName then
-		return {} --hopefully this never happens
-	end
+	if not playerName then return {} end  --hopefully this never happens
 	local productTable = {}
 	local playerForce = game.players[playerName].force
 	for k,product in pairs(products) do
-		local amount = product.amount or product.max_amount or 1
+		local amount = product.amount or amountMaxMinAverage(product) or 1
 		local IPS = (amount * (effects.productivity.bonus + 1)) / sec
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
@@ -151,7 +154,7 @@ local function expandProductsMines(products, sec, playerName, effects, recipeNam
 	local productTable = {}
 	local playerForce = game.players[playerName].force
 	for k,product in pairs(products) do
-		local amount = product.amount or product.max_amount or 1
+		local amount = product.amount or amountMaxMinAverage(product) or 1
 		local IPS = (amount * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
@@ -221,7 +224,7 @@ end
 
 local function getRecipeFromFurnace(entity, playerName)
 	if entity.type:find("furnace") then
-		local recipe = entity.previous_recipe
+		local recipe = entity.previous_recipe --or get recipe(entity.input)
 		if recipe then
 			globalSliderStorage(playerName, recipe.name)
 			local effects = getEffects(entity)
