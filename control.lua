@@ -129,7 +129,7 @@ local function expandProducts(products, sec, playerName, effects, recipeName)
 	local playerForce = game.players[playerName].force
 	for k,product in pairs(products) do
 		local amount = product.amount or amountMaxMinAverage(product) or 1
-		local IPS = (amount * (effects.productivity.bonus + 1)) / sec
+		local IPS = (product.probability or 1) * (amount * (effects.productivity.bonus + 1)) / sec
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
 		productTable[k].ips = IPS
@@ -155,7 +155,7 @@ local function expandProductsMines(products, sec, playerName, effects, recipeNam
 	local playerForce = game.players[playerName].force
 	for k,product in pairs(products) do
 		local amount = product.amount or amountMaxMinAverage(product) or 1
-		local IPS = (amount * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec
+		local IPS = (product.probability or 1) * (amount * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
 		productTable[k].ips = IPS
@@ -442,6 +442,11 @@ local function updateItem(recipe, items, current_section, minOrSec)
 		
 		guiElementInfoWrap_K.itemIPSWrap.item_sprite.tooltip = v.localised_name or v.name 
 		guiElementInfoWrap_K.itemIPSWrap.IPSLabel.caption = {'', truncateNumber(v.ips * global.ACT_slider[player.name][recipe.name].value * minOrSec.value, 2), minOrSec.time}
+		if v.probability and v.probability < 1 then
+			guiElementInfoWrap_K.itemIPSWrap.IPSLabel.tooltip = v.probability*100 .."%"
+		else
+			guiElementInfoWrap_K.itemIPSWrap.IPSLabel.tooltip = ""
+		end
 
 		if v.type ~= "fluid" then
 			guiElementInfoWrap_K.item_Bar.visible = true
@@ -490,16 +495,17 @@ end
 
 local function toggleRadio(element)	
 	for k,v in pairs(element.parent.children_names) do
+	if element.parent.children[k].type ~= "radiobutton" then return end
 		if v ~= element.name then
 			element.parent.children[k].state = not element.parent.children[k].state
 		end
 	end
 end
 
-local function determineMinOrSec(time_second)
-	if time_second.state then 
+local function determineMinOrSec(ACT_time_second)
+	if ACT_time_second.state then 
 		return {value = 1, time = {'captions.perSec'}, captions = 'captions.seconds'} 
-	else 
+	else
 		return {value = 60, time = {'captions.perMin'}, captions = 'captions.minutes'} 
 	end
 end
@@ -532,10 +538,10 @@ local function setupGui(player, playersGui)
 	"ACT_vertical_flow"}
 	
 	radio_section.radioLables.add{type = "label", name = "labelTimeSecond", caption = "Seconds", tooltip = {'controls.ACT_IPS_IPM', 'seconds'}, visible = false}
-	radio_section.radioButtons.add{type = "radiobutton", name = "timeSecond", tooltip = {'controls.ACT_IPS_IPM', 'seconds'}, state = true, visible = false}
+	radio_section.radioButtons.add{type = "radiobutton", name = "ACTTimeSecond", tooltip = {'controls.ACT_IPS_IPM', 'seconds'}, state = true, visible = false}
 	
 	radio_section.radioLables.add{type = "label", name = "labelTimeMinute", caption = "Minutes", tooltip = {'controls.ACT_IPS_IPM', 'minutes'}, visible = false}
-	radio_section.radioButtons.add{type = "radiobutton", name = "timeMinute", tooltip = {'controls.ACT_IPS_IPM', 'minutes'}, state = false, visible = false}
+	radio_section.radioButtons.add{type = "radiobutton", name = "ACTTimeMinute", tooltip = {'controls.ACT_IPS_IPM', 'minutes'}, state = false, visible = false}
 	
 	--add ingredients
 	assembler_group.add{type = "flow"--[[X--]], name = "ingredientsSection", direction = "vertical", visible = false --[[*--]]}
@@ -582,7 +588,7 @@ local function run(event)
 	local guiLocation = global.settings[player.name]["gui-location"]
 	local playersGui = player.gui[guiLocation] --top or left	
 	
-	if not playersGui["ACT_frame_"..playerIndex] then --BUG*******
+	if not playersGui["ACT_frame_"..playerIndex] then
 		setupGui(player, playersGui)
 	end
 	
@@ -593,12 +599,12 @@ local function run(event)
 	local assembler_group = playersGui["ACT_frame_"..playersGui.player_index].assemblerGroup
 	if not recipe then	--update gui and return
 		updateRecipe(assembler_group.recipeRadioWrap.recipeSection, {'tooltips.reset', entity.localised_name}, {'captions.no-recipe'}, spriteCheck(player, entity.name))
-		return 
+		return
 	end
 	
 	globalSliderStorage(player.name, recipe.name)
 
-	local minOrSec = determineMinOrSec(assembler_group.recipeRadioWrap.radioSection.radioButtons.timeSecond)
+	local minOrSec = determineMinOrSec(assembler_group.recipeRadioWrap.radioSection.radioButtons.ACTTimeSecond)
 
 	updateRecipe(assembler_group.recipeRadioWrap.recipeSection, {'tooltips.reset', recipe.localised_name}, {minOrSec.captions, truncateNumber(recipe.seconds / minOrSec.value, 2)}, spriteCheck(player, recipe.name)) 
 	
@@ -740,7 +746,7 @@ local function radiobutton(event)
 			end
 		end
 	end
-	if event.element.name:find("time") then
+	if event.element.name:find("ACTTime") then
 		toggleRadio(event.element)
 		local playerIndex = event.player_index
 		local player = game.players[playerIndex]
@@ -772,16 +778,16 @@ local function modChange(event)
 	if event.mod_changes == nil then return end
 	if event.mod_changes.Actual_Craft_Time == nil then return end
 	
-	local previousOldModVersion = event.mod_changes.Actual_Craft_Time.old_version
-	local currentNewModVersion = event.mod_changes.Actual_Craft_Time.new_version
+	local previousOldACTModVersion = event.mod_changes.Actual_Craft_Time.old_version
+	local currentNewACTModVersion = event.mod_changes.Actual_Craft_Time.new_version
 	
-	if previousOldModVersion == nil then return end --mod was installed previously
-	if currentNewModVersion == nil then return end --mod removed ¯\_(ツ)_/¯
+	if previousOldACTModVersion == nil then return end --mod was installed previously
+	if currentNewACTModVersion == nil then return end --mod removed ¯\_(ツ)_/¯
 	
-	if tostring(tostring(previousOldModVersion) <= tostring(currentNewModVersion)) then
+	if tostring(tostring(previousOldACTModVersion) <= tostring(currentNewACTModVersion)) then
 		-- mod was updated, check for gui and delete
 		for playerIndex,player in pairs(game.players) do
-			for _,guiLocation in pairs(player.gui.children) do
+			for _,guiLocation in pairs(player.gui.children) do --top, left and everywhere (everywhere isn't necessary but ¯\_(ツ)_/¯, I don't care)
 				if guiLocation["ACT_frame_"..playerIndex] then
 					guiLocation["ACT_frame_"..playerIndex].destroy()
 				end

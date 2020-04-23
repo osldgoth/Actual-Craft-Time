@@ -1,13 +1,23 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.0
+Date: 04/23/2020
+  Bugfixes:
+    - Including probablity for products
+---------------------------------------------------------------------------------------------------
+Version: 0.4.9
+Date: 04/18/2020
+  Bugfixes:
+    - EvoGui - Made a couple changes to prevent other mods to activate ACT code.
+---------------------------------------------------------------------------------------------------
 Version: 0.4.8
-Date: 04/19/2020
+Date: 04/18/2020
   Bugfixes:
     - Krastorio2 - Recipe product amount was set with max_amount instead of amount_max, now is set to the average of the amount_max and amount_min.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.7
 Date: 04/16/2020
   Minor Features:
-    - Added	ability to toggle between items per second and items per minute.
+    - Added ability to toggle between items per second and items per minute.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.6
 Date: 01/21/2020
