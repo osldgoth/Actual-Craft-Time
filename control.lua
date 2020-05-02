@@ -109,9 +109,7 @@ local function pbarTraits(IPS, playerName)
 end
 
 local function expandIngredients(ingredients, sec, playerName, recipeName)
-	if not playerName then
-		return {} --hopefully this never happens
-	end
+	if not playerName then return {} end--hopefully this never happens
 	local ingredientTable = {}
 	for k,ingredient in pairs(ingredients) do
 		local IPS = ingredient.amount / sec
@@ -155,7 +153,7 @@ local function expandProductsMines(products, sec, playerName, effects, recipeNam
 	local playerForce = game.players[playerName].force
 	for k,product in pairs(products) do
 		local amount = product.amount or amountMaxMinAverage(product) or 1
-		local IPS = (product.probability or 1) * (amount * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec
+		local IPS = (product.probability or 1) * (amount * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec --********
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
 		productTable[k].ips = IPS
