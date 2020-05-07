@@ -112,7 +112,7 @@ local function expandIngredients(ingredients, sec, playerName, recipeName)
 	if not playerName then return {} end--hopefully this never happens
 	local ingredientTable = {}
 	for k,ingredient in pairs(ingredients) do
-		local IPS = ingredient.amount / sec
+		local IPS = ingredient.amount / math.max(sec, 1/60) -- ingredient amount is also capped by tick
 		ingredientTable[k] = ingredient
 		ingredientTable[k].localised_name = getLocalisedName(ingredient.name)
 		ingredientTable[k].ips = IPS
@@ -127,7 +127,13 @@ local function expandProducts(products, sec, playerName, effects, recipeName)
 	local playerForce = game.players[playerName].force
 	for k,product in pairs(products) do
 		local amount = product.amount or amountMaxMinAverage(product) or 1
-		local IPS = (product.probability or 1) * (amount * (effects.productivity.bonus + 1)) / sec
+		local expectedAmount = (product.probability or 1) * amount
+		local IPS_main = expectedAmount / math.max(sec, 1/60) -- recipes can be executed only once per tick
+		local IPS_productivity = 0
+		if effects.productivity.bonus ~= 0 then
+			IPS_productivity = expectedAmount * effects.productivity.bonus / sec -- productivity bonus does not have cap
+		end
+		local IPS = IPS_main + IPS_productivity
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
 		productTable[k].ips = IPS
@@ -152,8 +158,14 @@ local function expandProductsMines(products, sec, playerName, effects, recipeNam
 	local productTable = {}
 	local playerForce = game.players[playerName].force
 	for k,product in pairs(products) do
-		local amount = product.amount or amountMaxMinAverage(product) or 1
-		local IPS = (product.probability or 1) * (amount * (effects.productivity.bonus + 1) * (playerForce.mining_drill_productivity_bonus + 1)) / sec --********
+		local amount = product.amount or amountMaxMinAverage(product) or 1	
+		local expectedAmount = (product.probability or 1) * amount
+		local IPS_main = expectedAmount / math.max(sec, 1/60)
+		local IPS_productivity = 0
+		if (playerForce.mining_drill_productivity_bonus + effects.productivity.bonus) ~= 0 then
+			IPS_productivity = expectedAmount * (playerForce.mining_drill_productivity_bonus + effects.productivity.bonus) / sec
+		end
+		local IPS = IPS_main + IPS_productivity
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
 		productTable[k].ips = IPS
@@ -188,12 +200,17 @@ local function getRecipeFromEntity(entity, playerName)
 			globalSliderStorage(playerName, recipe.name)
 			local effects = getEffects(entity)
 			local sec = recipe.energy / (entity.prototype.crafting_speed * (effects.speed.bonus + 1)) --x(y+1)
+			local is_capped = false
+			if sec < (1/60) then
+				is_capped = true
+			end
 			return {name = recipe.name,
 							localised_name = recipe.localised_name,
 							ingredients = expandIngredients(recipe.ingredients, sec, playerName, recipe.name),
 							products = expandProducts(recipe.products, sec, playerName, effects, recipe.name),
 							seconds = sec,
-							effects = effects
+							effects = effects,
+							is_capped = is_capped
 							}
 		end
 	end
@@ -207,12 +224,17 @@ local function getRecipeFromFurnaceOutput(entity, playerName)
 				globalSliderStorage(playerName, recipe.name)
 				local effects = getEffects(entity)
 				local sec = recipe.energy / (entity.prototype.crafting_speed * (effects.speed.bonus + 1)) --x(y+1)
+				local is_capped = false
+				if sec < (1/60) then
+					is_capped = true
+				end
 				return {name = recipe.name,
 								localised_name = recipe.localised_name,
 								ingredients = expandIngredients(recipe.ingredients, sec, playerName, recipe.name),
 								products = expandProducts(recipe.products, sec, playerName, effects, recipe.name),
 								seconds = sec,
-								effects = effects
+								effects = effects,
+								is_capped = is_capped
 								}
 			end
 		end
@@ -227,12 +249,17 @@ local function getRecipeFromFurnace(entity, playerName)
 			globalSliderStorage(playerName, recipe.name)
 			local effects = getEffects(entity)
 			local sec = recipe.energy / (entity.prototype.crafting_speed * (effects.speed.bonus + 1)) --x(y+1)
+			local is_capped = false
+			if sec < (1/60) then
+				is_capped = true
+			end
 			return {name = recipe.name,
 							localised_name = recipe.localised_name,
 							ingredients = expandIngredients(recipe.ingredients, sec, playerName, recipe.name),
 							products = expandProducts(recipe.products, sec, playerName, effects, recipe.name),
 							seconds = sec,
-							effects = effects
+							effects = effects,
+							is_capped = is_capped
 							}
 		end
 	else
@@ -247,11 +274,16 @@ local function getRecipeFromLab(entity, playerName)
 			globalSliderStorage(playerName, research.name)
 			local effects = getEffects(entity)
 			local sec = (research.research_unit_energy / 60) / ((entity.prototype.researching_speed * (entity.force.laboratory_speed_modifier + 1)) * (effects.speed.bonus + 1))
+			local is_capped = false
+			if sec < (1/60) then
+				is_capped = true
+			end
 			return {name = research.name,
 							localised_name = research.localised_name,
 							ingredients = expandIngredients(research.research_unit_ingredients, sec, playerName, research.name),
 							seconds = sec,
-							effects = effects
+							effects = effects,
+							is_capped = is_capped
 						  }
 		end
 	end
@@ -264,11 +296,18 @@ local function getRecipeFromMiningTarget(entity, playerName)
 			globalSliderStorage(playerName, miningTarget.name)
 			local effects = getEffects(entity)
 			local sec = miningTarget.prototype.mineable_properties.mining_time / (entity.prototype.mining_speed * (effects.speed.bonus + 1))
+			local is_capped = false
+			--[[ Productivity bonus (both from module and research) for mining seems not being capped by tick. I don't know why. :(
+			if sec < (1/60) then
+				is_capped = true
+			end
+			--]]
 			local recipe = {name = miningTarget.name,
 											localised_name = miningTarget.localised_name,
 											products = expandProductsMines(miningTarget.prototype.mineable_properties.products, sec, playerName, effects, miningTarget.name),
 											seconds = sec,
-											effects = effects
+											effects = effects,
+											is_capped = is_capped
 											}
 			if miningTarget.prototype.mineable_properties.fluid_amount then
 				recipe.ingredients = expandIngredients({{name = miningTarget.prototype.mineable_properties.required_fluid,
@@ -360,7 +399,7 @@ end
 
 local function guiVisibleAttrDescend(currentGuiSection, bool)
 	if currentGuiSection == nil or not next(currentGuiSection) then return end --invalid or an enpty table
-	
+		
 	local player = game.players[currentGuiSection.player_index]
 	if not player then return end
 	if currentGuiSection.parent and currentGuiSection.parent.visible ~= bool and not(currentGuiSection.parent.name == global.settings[player.name]["gui-location"]) and  currentGuiSection.parent.name ~= "ACT_frame_"..currentGuiSection.player_index then
@@ -454,6 +493,11 @@ local function updateItem(recipe, items, current_section, minOrSec)
 		end
 		guiElementInfoWrap_K.itemIPSWrap.IPSLabel.visible = true		
 	end
+end
+
+local function updateWarning(currentGuiSection, message)
+	guiVisibleAttrDescend(currentGuiSection, true)
+	currentGuiSection.warningLabel.caption = message
 end
 
 local function updateMachine(currentGuiSection, sliderValue, entity)
@@ -553,6 +597,11 @@ local function setupGui(player, playersGui)
 	
 	products_section.add{type = "label", name = "sectionLabel", caption = "Products", visible = false --[[*--]]}
  
+	--add warningGroup
+	playersGui["ACT_frame_"..playersGui.player_index].add{type = "flow"--[[X--]], name = "warningGroup", direction = "vertical", visible = false --[[*--]]}
+	local warning_group = playersGui["ACT_frame_"..playersGui.player_index].warningGroup
+	warning_group.add{type = "label", name = "warningLabel", caption = "", visible = false --[[*--]]}
+	
 	--add machineGroup
 	playersGui["ACT_frame_"..playersGui.player_index].add{type = "flow"--[[X--]], name = "machineGroup", direction = "vertical", visible = false --[[*--]]}
 	local machine_group = playersGui["ACT_frame_"..playersGui.player_index].machineGroup
@@ -611,6 +660,15 @@ local function run(event)
 	updateItem(recipe, recipe.ingredients, assembler_group.ingredientsSection, minOrSec)
 
 	updateItem(recipe, recipe.products, assembler_group.productsSection, minOrSec)
+	
+	if (recipe.is_capped) then
+		local warning_group = playersGui["ACT_frame_"..playersGui.player_index].warningGroup
+		if warning_group == nil then
+			game.print("warning_group is nil")
+		else
+			updateWarning(warning_group, {'captions.is-capped'})
+		end
+	end
 
 	local machine_group = playersGui["ACT_frame_"..playersGui.player_index].machineGroup
 	updateMachine(machine_group, truncateNumber(global.ACT_slider[player.name][recipe.name].value, 0), entity)
