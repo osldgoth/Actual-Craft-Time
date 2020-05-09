@@ -1,13 +1,22 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.2
+Date: 05/9/2020
+  Changes:
+    - Added recipe execution cap. - Thanks vehumet/crux042
+    - Increased precision of displayed craft time for extreamly fast recipies.
+  Bugfixes:
+    - Fixed productivty bonus for miners. - Thanks vehumet/crux042
+    - Fixed Controls setting key description.
+---------------------------------------------------------------------------------------------------
 Version: 0.5.1
 Date: 04/30/2020
   Changes:
-    - Custom script using "none" instead of "script-only"
+    - Custom script using "none" instead of "script-only".
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.0
 Date: 04/23/2020
   Bugfixes:
-    - Including probablity for products
+    - Including probablity for products.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.9
 Date: 04/18/2020

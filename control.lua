@@ -8,6 +8,12 @@ local function truncateNumber(nu, digit)
 	return nu
 end
 
+local function conditionalDecimalIncrease(input, x)
+	if input < .25 and not (input < .025) then return x + 1 end
+	if input < .025 then return x + 2 end
+	return x
+end
+
 local function amountMaxMinAverage(product)
 	if not product.amount_max or not product.amount_min then return nil end
 	return (product.amount_max + product.amount_min) / 2
@@ -129,10 +135,7 @@ local function expandProducts(products, sec, playerName, effects, recipeName)
 		local amount = product.amount or amountMaxMinAverage(product) or 1
 		local expectedAmount = (product.probability or 1) * amount
 		local IPS_main = expectedAmount / math.max(sec, 1/60) -- recipes can be executed only once per tick
-		local IPS_productivity = 0
-		if effects.productivity.bonus ~= 0 then
-			IPS_productivity = expectedAmount * effects.productivity.bonus / sec -- productivity bonus does not have cap
-		end
+		local IPS_productivity = expectedAmount * effects.productivity.bonus / sec -- productivity bonus does not have cap
 		local IPS = IPS_main + IPS_productivity
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
@@ -140,7 +143,11 @@ local function expandProducts(products, sec, playerName, effects, recipeName)
 		productTable[k].pbar = pbarTraits(IPS * global.ACT_slider[playerName][recipeName].value, playerName)
 	end
 	if recipeName == "rocket-part" then
-		local IPS = (10 * (effects.productivity.bonus + 1)) / sec
+		local expectedAmount = 10 --if a mod changes how many space-science-pack's in the rocket-part recipe then this will be wrong - need to figure out how/where to pull it from game data
+		local IPS_main = expectedAmount / math.max(sec, 1/60) -- recipes can be executed only once per tick
+		local IPS_productivity = expectedAmount * effects.productivity.bonus / sec -- productivity bonus does not have cap
+		local IPS = IPS_main + IPS_productivity
+		--local IPS = (10 * (effects.productivity.bonus + 1)) / sec
 		productTable[#products+1] = {amount = 10,
 																 name = "space-science-pack",
 																 type = "item",
@@ -161,10 +168,7 @@ local function expandProductsMines(products, sec, playerName, effects, recipeNam
 		local amount = product.amount or amountMaxMinAverage(product) or 1	
 		local expectedAmount = (product.probability or 1) * amount
 		local IPS_main = expectedAmount / math.max(sec, 1/60)
-		local IPS_productivity = 0
-		if (playerForce.mining_drill_productivity_bonus + effects.productivity.bonus) ~= 0 then
-			IPS_productivity = expectedAmount * (playerForce.mining_drill_productivity_bonus + effects.productivity.bonus) / sec
-		end
+		local IPS_productivity = expectedAmount * (playerForce.mining_drill_productivity_bonus + effects.productivity.bonus) / sec
 		local IPS = IPS_main + IPS_productivity
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
@@ -297,11 +301,10 @@ local function getRecipeFromMiningTarget(entity, playerName)
 			local effects = getEffects(entity)
 			local sec = miningTarget.prototype.mineable_properties.mining_time / (entity.prototype.mining_speed * (effects.speed.bonus + 1))
 			local is_capped = false
-			--[[ Productivity bonus (both from module and research) for mining seems not being capped by tick. I don't know why. :(
+			--Productivity bonus (both from module and research) for mining seems not being capped by tick. I don't know why. :(
 			if sec < (1/60) then
 				is_capped = true
 			end
-			--]]
 			local recipe = {name = miningTarget.name,
 											localised_name = miningTarget.localised_name,
 											products = expandProductsMines(miningTarget.prototype.mineable_properties.products, sec, playerName, effects, miningTarget.name),
@@ -399,7 +402,6 @@ end
 
 local function guiVisibleAttrDescend(currentGuiSection, bool)
 	if currentGuiSection == nil or not next(currentGuiSection) then return end --invalid or an enpty table
-		
 	local player = game.players[currentGuiSection.player_index]
 	if not player then return end
 	if currentGuiSection.parent and currentGuiSection.parent.visible ~= bool and not(currentGuiSection.parent.name == global.settings[player.name]["gui-location"]) and  currentGuiSection.parent.name ~= "ACT_frame_"..currentGuiSection.player_index then
@@ -579,11 +581,11 @@ local function setupGui(player, playersGui)
 	radio_section.add{type = "flow", name = "radioButtons", direction = "vertical", visible = false, style = 
 	"ACT_vertical_flow"}
 	
-	radio_section.radioLables.add{type = "label", name = "labelTimeSecond", caption = "Seconds", tooltip = {'controls.ACT_IPS_IPM', 'seconds'}, visible = false}
-	radio_section.radioButtons.add{type = "radiobutton", name = "ACTTimeSecond", tooltip = {'controls.ACT_IPS_IPM', 'seconds'}, state = true, visible = false}
+	radio_section.radioLables.add{type = "label", name = "labelTimeSecond", caption = "Seconds", tooltip = {'controls.ACT_IPS_IPM_T', 'seconds'}, visible = false}
+	radio_section.radioButtons.add{type = "radiobutton", name = "ACTTimeSecond", tooltip = {'controls.ACT_IPS_IPM_T', 'seconds'}, state = true, visible = false}
 	
-	radio_section.radioLables.add{type = "label", name = "labelTimeMinute", caption = "Minutes", tooltip = {'controls.ACT_IPS_IPM', 'minutes'}, visible = false}
-	radio_section.radioButtons.add{type = "radiobutton", name = "ACTTimeMinute", tooltip = {'controls.ACT_IPS_IPM', 'minutes'}, state = false, visible = false}
+	radio_section.radioLables.add{type = "label", name = "labelTimeMinute", caption = "Minutes", tooltip = {'controls.ACT_IPS_IPM_T', 'minutes'}, visible = false}
+	radio_section.radioButtons.add{type = "radiobutton", name = "ACTTimeMinute", tooltip = {'controls.ACT_IPS_IPM_T', 'minutes'}, state = false, visible = false}
 	
 	--add ingredients
 	assembler_group.add{type = "flow"--[[X--]], name = "ingredientsSection", direction = "vertical", visible = false --[[*--]]}
@@ -653,7 +655,10 @@ local function run(event)
 
 	local minOrSec = determineMinOrSec(assembler_group.recipeRadioWrap.radioSection.radioButtons.ACTTimeSecond)
 
-	updateRecipe(assembler_group.recipeRadioWrap.recipeSection, {'tooltips.reset', recipe.localised_name}, {minOrSec.captions, truncateNumber(recipe.seconds / minOrSec.value, 2)}, spriteCheck(player, recipe.name)) 
+	updateRecipe(assembler_group.recipeRadioWrap.recipeSection, 
+							{'tooltips.reset', recipe.localised_name}, 
+							{minOrSec.captions, truncateNumber(math.max(recipe.seconds, 1/60) / minOrSec.value, conditionalDecimalIncrease(recipe.seconds, 2))},
+							spriteCheck(player, recipe.name))
 	
 	updateRadio(assembler_group.recipeRadioWrap.radioSection)
 	
@@ -661,10 +666,10 @@ local function run(event)
 
 	updateItem(recipe, recipe.products, assembler_group.productsSection, minOrSec)
 	
-	if (recipe.is_capped) then
+	if recipe.is_capped then
 		local warning_group = playersGui["ACT_frame_"..playersGui.player_index].warningGroup
 		if warning_group == nil then
-			game.print("warning_group is nil")
+			game.print("warning_group is nil") --This should never happen as per on_configuration_changed
 		else
 			updateWarning(warning_group, {'captions.is-capped'})
 		end
