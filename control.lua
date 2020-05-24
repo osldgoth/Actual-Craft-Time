@@ -54,52 +54,64 @@ local function pbarTraits(IPS, playerName)
 	local value = 0
 	local tool = ""
 	-- may contain mod belts, bob's/better etc.
-	if bltsInts[playerName].source["basic-transport-belt"] and --Bobs
-		IPS <= bltsInts[playerName].source["basic-transport-belt"] then
+	if     bltsInts[playerName].source["basic-transport-belt"] and --Bobs - 7.5
+		     IPS <= bltsInts[playerName].source["basic-transport-belt"] then
 		belt = "basic-transport-belt"
 		color = {r = 0.15, g = 0.15, b = 0.15} --38, 38, 38
 		value = IPS / bltsInts[playerName].source["basic-transport-belt"]
 		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["basic-transport-belt"] * 100, 2)),  game.item_prototypes[belt].localised_name}
-	elseif IPS <= bltsInts[playerName].source["transport-belt"] then --vanilla 
+	elseif IPS <= bltsInts[playerName].source["transport-belt"] then --vanilla - 15
 		belt = "transport-belt"
 		color = {r = 0.98, g = 0.73, b = 0.0} -- 250, 186, 0
 		value = IPS / bltsInts[playerName].source["transport-belt"]
 		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["transport-belt"] * 100, 2)),  game.item_prototypes[belt].localised_name}
-	elseif IPS <= bltsInts[playerName].source["fast-transport-belt"] then --vanilla 
+	elseif IPS <= bltsInts[playerName].source["fast-transport-belt"] then --vanilla - 30 
 		belt = "fast-transport-belt"
 		color = {r = 0.98, g = 0.27, b = 0.06} -- 250, 69, 15
 		value = IPS / bltsInts[playerName].source["fast-transport-belt"]
 		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["fast-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}
-	elseif IPS <= bltsInts[playerName].source["express-transport-belt"] then --vanilla 
+	elseif IPS <= bltsInts[playerName].source["express-transport-belt"] then --vanilla - 45
 		belt = "express-transport-belt"
 		color = {r = 0.15, g = 0.67, b = 0.71} -- 38, 171, 181
 		value = IPS / bltsInts[playerName].source["express-transport-belt"]
 		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["express-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}
-	elseif bltsInts[playerName].source["5d-mk4-transport-belt"] and --5dim
+	elseif bltsInts[playerName].source["5d-mk4-transport-belt"] and --5dim - 57.6
 			   IPS <= bltsInts[playerName].source["5d-mk4-transport-belt"] then
 		belt = "5d-mk4-transport-belt"
 		color = {r = 0.08, g = 0.66, b = 0.14} -- 20, 168, 36
 		value = IPS / bltsInts[playerName].source["5d-mk4-transport-belt"]
 		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["5d-mk4-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}
-	elseif bltsInts[playerName].source["turbo-transport-belt"] and --Bobs
+	elseif bltsInts[playerName].source["turbo-transport-belt"] and --Bobs - 60
 				 IPS <= bltsInts[playerName].source["turbo-transport-belt"] then
 		belt = "turbo-transport-belt"
 		color = {r = 0.97, g = 0.07, b = 1.0} -- 247, 18, 255  purple
 		value = IPS / bltsInts[playerName].source["turbo-transport-belt"]
-		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["turbo-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}
-	elseif bltsInts[playerName].source["5d-mk5-transport-belt"] and --5dim
+		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["turbo-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}	
+  elseif bltsInts[playerName].source["kr-advanced-transport-belt"] and --Kr - 60
+				 IPS <= bltsInts[playerName].source["kr-advanced-transport-belt"] then
+		belt = "kr-advanced-transport-belt"
+		color = {r = 0.13, g = 0.92, b = 0.09} -- 34, 235, 23  green
+		value = IPS / bltsInts[playerName].source["kr-advanced-transport-belt"]
+		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["kr-advanced-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}
+	elseif bltsInts[playerName].source["5d-mk5-transport-belt"] and --5dim - 72
 				 IPS <= bltsInts[playerName].source["5d-mk5-transport-belt"] then
 		belt = "5d-mk5-transport-belt"
 		color = {r = 0.89, g = 0.91, b = 0.96} -- 227, 232, 245
 		value = IPS / bltsInts[playerName].source["5d-mk5-transport-belt"]
 		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["5d-mk5-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}
-	elseif bltsInts[playerName].source["ultimate-transport-belt"] and --Bobs
+	elseif bltsInts[playerName].source["ultimate-transport-belt"] and --Bobs - 75
 				 IPS <= bltsInts[playerName].source["ultimate-transport-belt"] then
 		belt = "ultimate-transport-belt"
 		color = {r = 0.07, g = 1.0, b = 0.62} -- 18, 255, 158 green
 		value = IPS / bltsInts[playerName].source["ultimate-transport-belt"]
-		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["ultimate-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}	
-	elseif bltsInts[playerName].source["BetterBelts_ultra-transport-belt"] and --Better Belts
+		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["ultimate-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}
+	elseif bltsInts[playerName].source["kr-superior-transport-belt"] and --Kr- 90
+				 IPS <= bltsInts[playerName].source["kr-superior-transport-belt"] then
+		belt = "kr-superior-transport-belt"
+		color = {r = 0.82, g = 0.00, b = 0.97} -- 210, 1, 247 purple--*********************
+		value = IPS / bltsInts[playerName].source["kr-superior-transport-belt"]
+		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["kr-superior-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}	
+	elseif bltsInts[playerName].source["BetterBelts_ultra-transport-belt"] and --Better Belts - 96
 				 IPS <= bltsInts[playerName].source["BetterBelts_ultra-transport-belt"] then
 		belt = "BetterBelts_ultra-transport-belt"
 		color = {r = .22, g = .84, b = .11} --56, 213, 27 green
