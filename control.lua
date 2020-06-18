@@ -258,10 +258,21 @@ local function getRecipeFromFurnaceOutput(entity, playerName)
 	return nil
 end
 
+local function getRecipeFromFurnaceInput(entity)
+  local inventoryContent = next(entity.get_inventory(defines.inventory.furnace_source).get_contents())
+  if not inventoryContent then return nil end
+  local filteredRecipies = game.get_filtered_recipe_prototypes{{filter = "has-ingredient-item", elem_filters = {{filter = "name", name = inventoryContent}}}}
+  for _,recipe in pairs(filteredRecipies) do
+    if recipe.category == "smelting" and #recipe.ingredients == 1 then
+       return recipe
+    end
+  end
+end
+
 local function getRecipeFromFurnace(entity, playerName)
 	if entity.type:find("furnace") then
-		local recipe = entity.previous_recipe --or get recipe(entity.input)
-		if recipe then
+		local recipe = entity.previous_recipe or getRecipeFromFurnaceInput(entity)
+    if recipe then
 			globalSliderStorage(playerName, recipe.name)
 			local effects = getEffects(entity)
 			local sec = recipe.energy / (entity.prototype.crafting_speed * (effects.speed.bonus + 1)) --x(y+1)
