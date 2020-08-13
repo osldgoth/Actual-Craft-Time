@@ -201,8 +201,13 @@ local function getEffects(entity)
 		if entity.effects.speed	then
 			effects.speed.bonus = entity.effects.speed.bonus
 		end
-		if entity.effects.productivity then
-			effects.productivity.bonus = entity.effects.productivity.bonus
+		if entity.effects.productivity and entity.effects.productivity.bonus > 0 then
+      effects.productivity.bonus = entity.effects.productivity.bonus
+    	-- if (entity.effects.productivity.bonus < 0) then
+        -- effects.productivity.bonus = 0
+      -- else
+        
+      -- end
 		end
 	end
 	return effects

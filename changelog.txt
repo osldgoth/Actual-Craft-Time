@@ -1,6 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.5
+Date: 08/10/2020
+  Bugfixes:
+    - Productivity bonus applied for positive values only
+    - Fixed release date in changelog for 0.5.4
+---------------------------------------------------------------------------------------------------
 Version: 0.5.4
-Date: 06/xx/2020
+Date: 06/18/2020
   Bugfixes:
     - Furnaces now show possible recipe information from input
 ---------------------------------------------------------------------------------------------------
