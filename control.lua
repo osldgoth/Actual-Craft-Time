@@ -1,9 +1,12 @@
 local function truncateNumber(nu, digit)
+  --game.print("number "..nu.." digit "..digit)
+
 	local k = 1
 	while nu > k do
 		k = k * 10
 		digit = digit + 1
 	end
+  --game.print("k "..k..", digit "..digit)
 	nu = string.format("%."..digit.."f", nu / k) * k
 	return nu
 end
@@ -118,6 +121,7 @@ local function pbarTraits(IPS, playerName)
 		value = IPS / bltsInts[playerName].source["BetterBelts_ultra-transport-belt"]
 		tool = { "tooltips.percent-of", tostring(truncateNumber(IPS / bltsInts[playerName].source["BetterBelts_ultra-transport-belt"] * 100, 2)), game.item_prototypes[belt].localised_name}
 	else
+  --game.print("ips is inf")
 		belt = "express-transport-belt"
 		color = {r = 1, g = 1, b = 1} --white
 		value = IPS / bltsInts[playerName].source["express-transport-belt"]
@@ -181,6 +185,7 @@ local function expandProductsMines(products, sec, playerName, effects, recipeNam
 		local expectedAmount = (product.probability or 1) * amount
 		local IPS_main = expectedAmount / math.max(sec, 1/60)
 		local IPS_productivity = expectedAmount * (playerForce.mining_drill_productivity_bonus + effects.productivity.bonus) / sec
+    --game.print("ips-productivity "..IPS_productivity)
 		local IPS = IPS_main + IPS_productivity
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
@@ -268,7 +273,9 @@ local function getRecipeFromFurnaceInput(entity)
   if not inventoryContent then return nil end
   local filteredRecipies = game.get_filtered_recipe_prototypes{{filter = "has-ingredient-item", elem_filters = {{filter = "name", name = inventoryContent}}}}
   for _,recipe in pairs(filteredRecipies) do
-    if recipe.category == "smelting" and #recipe.ingredients == 1 then
+    if entity.name:find("crusher") and recipe.category == "crushing" then
+      return recipe
+    elseif recipe.category == "smelting" and #recipe.ingredients == 1 then
        return recipe
     end
   end
@@ -322,12 +329,20 @@ local function getRecipeFromLab(entity, playerName)
 end
 
 local function getRecipeFromMiningTarget(entity, playerName)
+--game.print("confirm")
 	if entity.type:find("mining%-drill") then
 		local miningTarget = entity.mining_target
 		if miningTarget then
 			globalSliderStorage(playerName, miningTarget.name)
 			local effects = getEffects(entity)
 			local sec = miningTarget.prototype.mineable_properties.mining_time / (entity.prototype.mining_speed * (effects.speed.bonus + 1))
+      -- if sec == math.huge then
+      -- game.print("sec = 0")
+        -- sec = 0 -- this is not a good solution, but what is?
+      -- end
+      -- game.print("mining time "..miningTarget.prototype.mineable_properties.mining_time)
+      -- game.print("/ (mining speed "..entity.prototype.mining_speed)
+      -- game.print(" * speed.bonus "..effects.speed.bonus)
 			local is_capped = false
 			--Productivity bonus (both from module and research) for mining seems not being capped by tick. I don't know why. :(
 			if sec < (1/60) then
@@ -642,8 +657,8 @@ local function setupGui(player, playersGui)
 	machine_group.sliderSection.add{type = "sprite-button", name = "Sub5-ACT-sliderButton", tooltip = {'tooltips.add-sub', "-5", "1", "-31", "-25"}, sprite = spriteCheck(player, "editor_speed_down"), style = "ACT_buttons", visible = false --[[*--]]}
 	machine_group.sliderSection.add{type = "sprite-button", name = "Sub1-ACT-sliderButton", tooltip = {'tooltips.add-sub', "-1", {'', {'tooltips.dn'}, ' ', global.settings[player.name]["max-slider-value"] / 2}, "-7", "-10"}, sprite = spriteCheck(player, "left_arrow"), style = "ACT_buttons", visible = false --[[*--]]}
 	
-	machine_group.sliderSection.add{type = "slider", name = playersGui.player_index.."_slider", minimum_value = 1, maximum_value = global.settings[player.name]["max-slider-value"], value = truncateNumber(0--[[sliderValue--]], 0), tooltip = {'tooltips.scroll-wheel'}, style = "slider", visible = false --[[*--]]}
-	
+	machine_group.sliderSection.add{type = "slider", name = playersGui.player_index.."_slider", minimum_value = 1, maximum_value = global.settings[player.name]["max-slider-value"], tooltip = {'tooltips.scroll-wheel'}, style = "slider", visible = false --[[*--]]}
+	--*** --[[ value = 0,--]]--[[truncateNumber(0--[[sliderValue--]], 0)--]]
 	machine_group.sliderSection.add{type = "sprite-button", name = "Add1-ACT-sliderButton", tooltip = {'tooltips.add-sub', "+1", {'', {'tooltips.up'}, ' ', global.settings[player.name]["max-slider-value"] / 2}, "+7", "+10"}, sprite = spriteCheck(player, "right_arrow"), style = "ACT_buttons", visible = false --[[*--]]}
 	machine_group.sliderSection.add{type = "sprite-button", name = "Add5-ACT-sliderButton", tooltip = {'tooltips.add-sub', "+5", global.settings[player.name]["max-slider-value"], "+31", "+25"}, sprite = spriteCheck(player, "editor_speed_up"), style = "ACT_buttons", visible = false --[[*--]]}
 	
@@ -671,18 +686,16 @@ local function run(event)
 	
 	guiVisibleAttrDescend(playersGui["ACT_frame_"..playersGui.player_index], false)
 	findPrototypeData(player.name)
-	
 	local recipe = getRecipe(entity, player.name)
 	local assembler_group = playersGui["ACT_frame_"..playersGui.player_index].assemblerGroup
 	if not recipe then	--update gui and return
 		updateRecipe(assembler_group.recipeRadioWrap.recipeSection, {'tooltips.reset', entity.localised_name}, {'captions.no-recipe'}, spriteCheck(player, entity.name))
 		return
 	end
-	
 	globalSliderStorage(player.name, recipe.name)
 
 	local minOrSec = determineMinOrSec(assembler_group.recipeRadioWrap.radioSection.radioButtons.ACTTimeSecond)
-
+  --game.print("this is recipe "..serpent.block(recipe))
 	updateRecipe(assembler_group.recipeRadioWrap.recipeSection, 
 							{'tooltips.reset', recipe.localised_name}, 
 							{minOrSec.captions, truncateNumber(math.max(recipe.seconds, 1/60) / minOrSec.value, conditionalDecimalIncrease(recipe.seconds, 2))},
@@ -697,7 +710,7 @@ local function run(event)
 	if recipe.is_capped then
 		local warning_group = playersGui["ACT_frame_"..playersGui.player_index].warningGroup
 		if warning_group == nil then
-			game.print("warning_group is nil") --This should never happen as per on_configuration_changed
+			--game.print("warning_group is nil") --This should never happen as per on_configuration_changed
 		else
 			updateWarning(warning_group, {'captions.is-capped'})
 		end
