@@ -185,7 +185,6 @@ local function expandProductsMines(products, sec, playerName, effects, recipeNam
 		local expectedAmount = (product.probability or 1) * amount
 		local IPS_main = expectedAmount / math.max(sec, 1/60)
 		local IPS_productivity = expectedAmount * (playerForce.mining_drill_productivity_bonus + effects.productivity.bonus) / sec
-    --game.print("ips-productivity "..IPS_productivity)
 		local IPS = IPS_main + IPS_productivity
 		productTable[k] = product
 		productTable[k].localised_name = getLocalisedName(product.name)
@@ -221,6 +220,7 @@ end
 local function getRecipeFromEntity(entity, playerName)
 	if entity.type:find("assembling%-machine") or
 		 entity.type:find("rocket%-silo") then
+    game.print("entity")
 		local recipe = entity.get_recipe()
 		if recipe then
 			globalSliderStorage(playerName, recipe.name)
@@ -230,6 +230,17 @@ local function getRecipeFromEntity(entity, playerName)
 			if sec < (1/60) then
 				is_capped = true
 			end
+      for k,v in pairs(recipe.ingredients) do
+        for i,j in pairs(recipe.products) do
+          if j.name == v.name and j.amount >= v.amount then
+          --game.print("amounts "..j.amount.."; "..v.amount)
+          --recipe.products[i].amount = j.amount - v.amount
+          --game.print("amounts "..j.amount.."; "..v.amount)
+          game.print(serpent.block(recipe.products))
+          end
+        end
+      end
+      
 			return {name = recipe.name,
 							localised_name = recipe.localised_name,
 							ingredients = expandIngredients(recipe.ingredients, sec, playerName, recipe.name),
@@ -244,6 +255,7 @@ end
 
 local function getRecipeFromFurnaceOutput(entity, playerName)
 	if entity.type:find("furnace") then
+    game.print("furnace output")
 		for item,_ in pairs(entity.get_output_inventory().get_contents()) do --can get several *oil*?
 			local recipe = game.recipe_prototypes[item]
 			if recipe then
@@ -269,6 +281,7 @@ local function getRecipeFromFurnaceOutput(entity, playerName)
 end
 
 local function getRecipeFromFurnaceInput(entity)
+    game.print("furnace input")
   local inventoryContent = next(entity.get_inventory(defines.inventory.furnace_source).get_contents())
   if not inventoryContent then return nil end
   local filteredRecipies = game.get_filtered_recipe_prototypes{{filter = "has-ingredient-item", elem_filters = {{filter = "name", name = inventoryContent}}}}
@@ -283,6 +296,7 @@ end
 
 local function getRecipeFromFurnace(entity, playerName)
 	if entity.type:find("furnace") then
+    game.print("furnace")
 		local recipe = entity.previous_recipe or getRecipeFromFurnaceInput(entity)
     if recipe then
 			globalSliderStorage(playerName, recipe.name)
@@ -308,6 +322,7 @@ end
 
 local function getRecipeFromLab(entity, playerName)
 	if entity.type:find("lab") then
+    game.print("lab")
 		local research = entity.force.current_research
 		if research then
 			globalSliderStorage(playerName, research.name)
@@ -329,8 +344,8 @@ local function getRecipeFromLab(entity, playerName)
 end
 
 local function getRecipeFromMiningTarget(entity, playerName)
---game.print("confirm")
 	if entity.type:find("mining%-drill") then
+    game.print("mining target")
 		local miningTarget = entity.mining_target
 		if miningTarget then
 			globalSliderStorage(playerName, miningTarget.name)
