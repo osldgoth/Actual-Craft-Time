@@ -4,7 +4,7 @@
 	"version":"0.5.7",
 	"title":"Actual Craft Time",
 	"homepage":"https://github.com/osldgoth/",
-	"description":"Display actual craft times for assemblers, furnaces and rocket silo",
+	"description":"Display actual craft times for assemblers, furnaces and rocket silo, and more",
 	"factorio_version": "1.0",
 	"dependencies": ["base >= 0.17.00", "? boblogistics >= 0.16.00"]
 }
