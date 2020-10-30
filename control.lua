@@ -148,8 +148,15 @@ local function copyProductsForWriteControl(recipe)
   
   for _,recipeIngredient in pairs(recipe.ingredients) do
     for i, recipeProduct in pairs(products) do
-      if recipeProduct.name == recipeIngredient.name and recipeProduct.amount >= recipeIngredient.amount then --there should not be amount_max/amount_min
-        recipeProduct.amount = recipeProduct.amount - recipeIngredient.amount
+      local productAmount = recipeProduct.amount or amountMaxMinAverage(recipeProduct) or 1
+      local IngredientAmount = recipeIngredient.amount or amountMaxMinAverage(recipeIngredient) or 1
+      if recipeProduct.name == recipeIngredient.name and productAmount >= IngredientAmount then --there should not be amount_max/amount_min **there is in mods
+        if recipeProduct.amount then
+          recipeProduct.amount = productAmount - IngredientAmount
+        elseif recipeProduct.amount_max and recipeProduct.amount_min and recipeIngredient.amount_max and recipeIngredient.amount_min then
+          recipeProduct.amount_max = recipeProduct.amount_max - recipeIngredient.amount_max
+          recipeProduct.amount_min = recipeProduct.amount_min - recipeIngredient.amount_min
+        end
       end
     end
   end
